@@ -39,14 +39,18 @@ def _remove_extraneous_dim(data, dim):
     """
     # for the lat/lon arrays, which are 2-d but needn't (unless they do vary in both x and y)
     # hack for now
+    if data.ndim != 2:
+        raise NotImplementedError(f"data.ndim={data.ndim!r}")
     if dim == 0:
-        assert np.all(data[:, 0] == data[0, 0])  # check could be better...
+        # assert np.all(data[:, 0] == data[0, 0])
+        assert np.all(data - data[0, :][np.newaxis, :] == 0)
         return data[0, :].copy()
     elif dim == 1:
-        assert np.all(data[0, :] == data[0, 0])
+        # assert np.all(data[0, :] == data[0, 0])
+        assert np.all(data - data[:, 0][:, np.newaxis] == 0)
         return data[:, 0].copy()
     else:
-        raise NotImplementedError(f"dim={dim!r}")
+        raise ValueError(f"dim={dim!r}")
 
 
 def _data_var(fpath, metadata):
