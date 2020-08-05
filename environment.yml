@@ -11,3 +11,5 @@ dependencies:
   - xarray
   - netcdf4
   - h5netcdf  # depends on h5py
+  - pyyaml
+  - tabulate  # needed by pd.DataFrame.to_markdown()
