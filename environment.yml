@@ -1,0 +1,13 @@
+# Python environment
+name: meteo473_fa20
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7
+  #
+  - ipython
+  - ipykernel
+  #
+  - xarray
+  - netcdf4
+  - h5netcdf  # depends on h5py
