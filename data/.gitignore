@@ -1,1 +1,4 @@
 test_*.nc
+# for now not storing the non-test nc either
+# but in future might with Git LFS
+data.nc

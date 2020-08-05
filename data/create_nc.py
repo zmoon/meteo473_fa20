@@ -39,6 +39,7 @@ def _remove_extraneous_dim(data, dim):
     """
     # for the lat/lon arrays, which are 2-d but needn't (unless they do vary in both x and y)
     # hack for now
+    # TODO: could create `keep` tuples and use those for indexing
     if data.ndim != 2:
         raise NotImplementedError(f"data.ndim={data.ndim!r}")
     if dim == 0:
@@ -91,7 +92,14 @@ def create_ds():
     n_z, n_y, n_x = shape3d
     dz = 500.0  # m
     z = np.arange(0, n_z) * dz
-    dv_z = {"height": ("height", z, {"units": "m", "long_name": "Height above the surface plane"},)}
+    dv_z = {
+        "height": (
+            "height",
+            z,
+            {"units": "m", "long_name": "Geopotential height above the surface plane"},
+        )
+    }
+    # MS1 notes suggest this should be geopotential height
 
     dvs_all.update(dv_z)
 
@@ -133,8 +141,8 @@ def round_arr(x, decimal_places=6):
     return np.around(x1, decimals=decimal_places) * tens
 
 
-def write_datasets():
-
+def write_test_ncs():
+    """Create the NetCDF files for the comparison tests."""
     ds = create_ds()
 
     # try different output engine options
@@ -156,6 +164,14 @@ def write_datasets():
             ds2[vn][:] = round_arr(ds2[vn], decimal_places=nsd)
 
         ds2.to_netcdf(f"test_h5netcdf_comp9_nsd{nsd}.nc", engine="h5netcdf", encoding=encoding)
+
+
+def write_nc():
+    """Write the nc that we will/may actually use."""
+    ds = create_ds()
+    comp = {"zlib": True, "complevel": 9}
+    encoding = {vn: comp for vn in ds.data_vars}
+    ds.to_netcdf("data.nc", engine="h5netcdf", encoding=encoding)
 
 
 def convert_bytes(num):
@@ -230,6 +246,7 @@ def compare_test_ncs():
 
 if __name__ == "__main__":
 
-    # write_datasets()
+    # write_test_ncs()
+    # compare_test_ncs()
 
-    compare_test_ncs()
+    write_nc()
