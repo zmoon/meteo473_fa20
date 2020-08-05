@@ -12,6 +12,9 @@ import yaml
 DATA_ORIG_PATH = "./orig"
 
 
+# TODO: check for missing units, etc. in meta data file
+
+
 def check_dupes(l):
     """Check an iterable for duplicates and raise error if there are any."""
     from collections import Counter

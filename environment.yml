@@ -7,9 +7,12 @@ dependencies:
   #
   - ipython
   - ipykernel
+  - ipympl  # brings notebook, etc.; for `%matplotlib widget` in Jupyter Lab
   #
   - xarray
   - netcdf4
   - h5netcdf  # depends on h5py
   - pyyaml
   - tabulate  # needed by pd.DataFrame.to_markdown()
+  #
+  - matplotlib
