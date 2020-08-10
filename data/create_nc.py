@@ -180,7 +180,7 @@ def write_nc():
 def convert_bytes(num):
     # ref: https://stackoverflow.com/a/39988702
     # but modified to use MB, not MiB, etc.
-    for metric in ["B", "kB", "GB", "TB"]:  # etc.
+    for metric in ["B", "kB", "MB", "GB", "TB"]:  # etc.
         if num < 1000:
             return f"{num:3.2f} {metric}"
         num /= 1000
