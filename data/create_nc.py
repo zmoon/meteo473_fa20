@@ -8,6 +8,8 @@ import pandas as pd
 import xarray as xr
 import yaml
 
+from rounding import round_array  # noreorder (doesn't seem to be recognized as 1st-party)
+
 
 DATA_ORIG_PATH = "./orig"
 
@@ -116,34 +118,6 @@ def create_ds():
     return ds
 
 
-def nsb(nsd):
-    """Number of significant bits (nsb) from number of significant digits (nsd).
-
-    nsd is like sig figs, not dsd (decimal significant digits)
-    so the numbers we use this on need to be between -1.0 and 1.0 (divided by their 10 base)
-
-    ref: https://github.com/fraserwg/elePyant/issues/1#issue-656925070
-    """
-    ...
-
-
-def _rebase(x):
-    """Convert to decimal and 10 base"""
-    if isinstance(x, xr.DataArray):
-        x = x.values
-    base10 = np.ceil(np.log10(np.abs(x)))
-    tens = 10 ** base10
-    # correction for log10(0)
-    # would be nice to be able to avoid the `RuntimeWarning: divide by zero encountered in log10` somehow though
-    tens[x == 0] = 1.0
-    return x / tens, tens
-
-
-def round_arr(x, decimal_places=6):
-    x1, tens = _rebase(x)
-    return np.around(x1, decimals=decimal_places) * tens
-
-
 def write_test_ncs():
     """Create the NetCDF files for the comparison tests."""
     ds = create_ds()
@@ -153,20 +127,19 @@ def write_test_ncs():
     ds.to_netcdf("test_h5netcdf.nc", engine="h5netcdf")
 
     # comp without modifying
-    comp = {"zlib": True, "complevel": 9}
+    comp = {"zlib": True, "complevel": 9}  # 9 is the max. 6 is zlib's default
     encoding = {vn: comp for vn in ds.data_vars}
     ds.to_netcdf("test_h5netcdf_comp9.nc", engine="h5netcdf", encoding=encoding)
 
-    # comp after rounding in base 10
-    # like elepyant: https://github.com/fraserwg/elePyant/blob/master/elePyant/core.py
-    # but preserving sig figs instead of decimal places
+    # comp after rounding
     decimal_places_try = [3, 4, 6]
     for nsd in decimal_places_try:
         ds2 = ds.copy(deep=True)
         for vn in ds2.data_vars:
-            ds2[vn][:] = round_arr(ds2[vn], decimal_places=nsd)
+            ds2[vn][:] = round_array(ds2[vn].values, nsd=nsd, in_binary=True)
 
-        ds2.to_netcdf(f"test_h5netcdf_comp9_nsd{nsd}.nc", engine="h5netcdf", encoding=encoding)
+        # ds2.to_netcdf(f"test_h5netcdf_comp9_nsd{nsd}.nc", engine="h5netcdf", encoding=encoding)
+        ds2.to_netcdf(f"test_h5netcdf_comp9_nsd={nsd}_bin.nc", engine="h5netcdf", encoding=encoding)
 
 
 def write_nc():
@@ -252,4 +225,6 @@ if __name__ == "__main__":
     # write_test_ncs()
     # compare_test_ncs()
 
-    write_nc()
+    # write_nc()
+
+    pass
