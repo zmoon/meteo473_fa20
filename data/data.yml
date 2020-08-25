@@ -68,7 +68,9 @@ files:
 
   QRAINcmp.npy:
     name: qrain_cmp
-    long_name: Composite rain water mixing ratio  # ?? which levels
+    # this is the max value at any level,
+    # similar to composite radar reflectivity
+    long_name: Composite rain water mixing ratio
     units: kg kg^-1  # (kg rain water) (kg air)^-1
     dims: *dims_tyx
 
