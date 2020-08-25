@@ -1,6 +1,7 @@
 # we will store Jupytext representations of the notebooks
 *.ipynb
 
+.vscode
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
