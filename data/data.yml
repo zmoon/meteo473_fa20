@@ -24,7 +24,8 @@ anchors:
   - &dims_tzyx [height, lat, lon]
 
 # we have only been given one time (a snapshot from a WRF sim of Typhoon Haiyan)
-# time:
+# from George: "The original WRF output file included the date and time in the file name. It was 2013-11-07 at 7 Z"
+time: 2013-11-07 07:00  # assumed UTC with time zone omitted
 
 # grid is 3 km in horizontal dims (approximately?), 500 m in vertical (index 0 is the surface)
 
