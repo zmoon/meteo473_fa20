@@ -104,10 +104,12 @@ files:
     dims: *dims_tyx
     cf_standard_name: sea_surface_temperature
 
+  # XLAT and XLONG should be the grid-cell centers
+  # TODO: note this in attrs somehow?
   XLAT.npy:
     name: lat
     long_name: Latitude
-    units: °N
+    units: "\u00B0N"  # `°N` gets read as `Â°N` for some reason...
     dims: *dims_y
     cf_standard_name: latitude
     cf_units: degree_north
@@ -115,7 +117,7 @@ files:
   XLONG.npy:
     name: lon
     long_name: Longitude
-    units: °E
+    units: "\u00B0E"
     dims: *dims_x
     cf_standard_name: longitude
     cf_units: degree_east
