@@ -17,6 +17,30 @@ DATA_ORIG_PATH = "./orig"
 # TODO: check for missing units, etc. in meta data file
 
 
+def cf_units_to_tex(s: str):
+    """Convert CF-style units string to TeX-like.
+    (In order to get exponents in plot labels, etc.)
+    """
+    # note pyparsing is a dependency of matplotlib
+    # import pyparsing as pp
+    #
+    # unit_exp = pp.pyparsing_common.signed_integer
+    import re
+
+    def expify(match):
+        m = match.group(0)
+        # if m == "1":
+        #     return m
+        # else:
+        return f"$^{{{m}}}$"
+
+    # this regex matches integers with optional negative sign (hyphen)
+    # TODO: more careful match only to the right of a base unit (one with no exp)
+    s_new = re.sub(r"-?\d", expify, s)
+
+    return s_new
+
+
 def check_dupes(l):
     """Check an iterable for duplicates and raise error if there are any."""
     from collections import Counter
@@ -60,8 +84,8 @@ def _remove_extraneous_dim(data, dim):
 
 
 def _data_var(fpath, metadata):
-    """Use the data from the YAML file to make a xr.Dataset data_vars item"""
-    name = metadata["name"]
+    """Use the data from the YAML file to make a xr.Dataset() data_vars item."""
+    name = metadata["name"]  # we fail here if no `name`
     dims = tuple(metadata["dims"])
     data = np.load(fpath)
 
@@ -71,7 +95,30 @@ def _data_var(fpath, metadata):
     elif name == "lon":
         data = _remove_extraneous_dim(data, 0)
 
-    attrs = {k: v for k, v in metadata.items() if k in ("units", "long_name")}
+    # check for required attrs
+    required_attrs = ("units", "name", "long_name")
+    if any(attr not in metadata for attr in required_attrs):
+        raise Exception(
+            "'name', 'units', 'long_name' must be specified. "
+            f"variable `{name}` is missing one of the latter two."
+        )
+
+    # create new unit strings
+    units = metadata.get("units")
+    long_units = metadata.get("long_units")
+    units_tex = cf_units_to_tex(units)
+    if long_units:
+        long_units_tex = cf_units_to_tex(long_units)
+
+    # orig attrs
+    allowed_attrs = ("units", "long_name", "cf_standard_name", "cf_units")
+    attrs = {k: v for k, v in metadata.items() if k in allowed_attrs}
+
+    # add new attrs (new unit strings)
+    attrs["units"], attrs["units_orig"] = units_tex, attrs["units"]
+    if long_units:
+        attrs["long_units"], attrs["long_units_orig"] = long_units_tex, long_units
+
     return {name: (dims, data, attrs)}
 
 
@@ -92,7 +139,7 @@ def create_ds():
 
     dvs_all = _data_vars(md["files"])
 
-    # construct height manually
+    # construct height manually based on the MS1 notes
     shape3d = np.load(f"{DATA_ORIG_PATH}/tInterp.npy").shape
     n_z, n_y, n_x = shape3d
     dz = 500.0  # m
@@ -104,7 +151,7 @@ def create_ds():
             {"units": "m", "long_name": "Geopotential height above the surface plane"},
         )
     }
-    # MS1 notes suggest this should be geopotential height
+    # MS1 notes suggest this it geopotential height
 
     dvs_all.update(dv_z)
 
