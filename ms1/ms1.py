@@ -8,14 +8,16 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.5.2
 #   kernelspec:
-#     display_name: Python [conda env:meteo473_fa20]
+#     display_name: Python 3
 #     language: python
-#     name: conda-env-meteo473_fa20-py
+#     name: python3
 # ---
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+
+# %matplotlib widget
 
 # %% [markdown]
 # Load the data.
@@ -54,7 +56,7 @@ except AssertionError:
 latc = lat[:-1] + 0.5 * dlat
 lonc = lon[:-1] + 0.5 * dlon
 
-fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(9, 6))
+fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(6, 4))
 
 ax1.plot(latc, dlat)
 ax1.set_xlabel("lat (deg.)")

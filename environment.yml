@@ -8,6 +8,7 @@ dependencies:
   - ipython
   - ipykernel
   - ipympl  # brings notebook, etc.; for `%matplotlib widget` in Jupyter Lab
+  - jupytext
   #
   - xarray
   - netcdf4
@@ -16,3 +17,5 @@ dependencies:
   - tabulate  # needed by pd.DataFrame.to_markdown()
   #
   - matplotlib
+  #
+  - pylint
