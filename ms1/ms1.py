@@ -213,3 +213,36 @@ im = ds.qrain_cmp.plot(
 # * leave x, y as distance on the sphere from 0 deg. lat/lon
 
 # %%
+d_xy_const_km = 3.0
+
+x_const = np.arange(0, 300, dtype=np.float) * d_xy_const_km * 1000
+x_const -= x_const.mean()
+y_const = x_const.copy()
+X_const, Y_const = np.meshgrid(x_const, y_const)
+
+# true
+X0, Y0 = latlon_to_xy(Lat, Lon)
+X0_1 = X0 - np.mean(X0)  # subtract overall mean
+Y0_1 = Y0 - np.mean(Y0)
+X0_2 = X0 - np.mean(X0, axis=1)[:, np.newaxis]  # subtract zonal mean from each row
+Y0_2 = Y0 - np.mean(Y0, axis=0)[np.newaxis, :]  # subtract meriodonal mean from each col
+
+fig, [ax1, ax1_2, ax2] = plt.subplots(3, 1, sharex=True, sharey=True, figsize=(7, 10))
+
+ax1.set_title("true (subtracting overall mean x and y values)")
+ax1.pcolormesh(X0_1 / 1000, Y0_1 / 1000, ds.hfx, shading="auto")
+
+ax1_2.set_title("true (accounting for shift in central x value etc.)")
+ax1_2.pcolormesh(X0_2 / 1000, Y0_2 / 1000, ds.hfx, shading="auto")
+
+ax2.set_title(f"using a constant grid spacing of {d_xy_const_km} km")
+ax2.pcolormesh(X_const / 1000, Y_const / 1000, ds.hfx, shading="auto")
+ax2.set_xlabel("$x$ (km) (difference from mean)")
+
+for ax in [ax1, ax1_2, ax2]:
+    ax.set_aspect("equal")
+    ax.set_ylabel("$y$ (km) (difference from mean)")
+
+
+# %% [markdown]
+# 👆 We see that in the real data, the central $x$ values shift to the west as you move from south to north. If we change how we center the data to account for this, we can see the slight distortion due to the changing in grid cell size (from 3.44 to 3.34 km moving from south to north). Constant grid spacing of 3 km is a bit too small, we can see, but 3.4 km looks nice.
