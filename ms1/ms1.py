@@ -86,14 +86,29 @@ fig.tight_layout()
 # 300x300
 Lon, Lat = np.meshgrid(lon, lat)  # note: still deg. here
 
-Lon_rad, Lat_rad = np.deg2rad(Lon), np.deg2rad(Lat)
-
 r_e = 6.371e6  # mean Earth radius (m)
 
-Y = r_e * Lat_rad
-X = r_e * Lon_rad * np.cos(Lat_rad)
 
-# if X and Y are the grid cell centers, this may not be strictly accurate
+def latlon_to_xy(lat_deg, lon_deg):
+    lon_rad, lat_rad = np.deg2rad(lon_deg), np.deg2rad(lat_deg)
+    y = r_e * lat_rad
+    x = r_e * lon_rad * np.cos(lat_rad)
+    return x, y
+
+
+def xy_to_latlon(x_m, y_m):
+    lat_rad = y_m / r_e
+    lon_rad = x_m / (r_e * np.cos(lat_rad))
+    lat_deg, lon_deg = np.rad2deg(lat_rad), np.rad2deg(lon_rad)
+    return lat_deg, lon_deg
+
+
+# convert the lat/lon meshgrid to x/y
+X, Y = latlon_to_xy(Lat, Lon)
+assert np.allclose(np.hstack((Lat, Lon)), np.hstack((xy_to_latlon(X, Y))))
+
+# if X and Y are the grid cell centers,
+# these are the distance between grid cell centers, not strictly the grid cell sizes
 # since the diff then is really telling us 0.5*dX[i] + 0.5*dX[i+1], etc.
 # and we know that that grid spacings are not constant in this data
 dY = np.diff(Y, axis=0)
