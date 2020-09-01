@@ -93,6 +93,9 @@ r_e = 6.371e6  # mean Earth radius (m)
 Y = r_e * Lat_rad
 X = r_e * Lon_rad * np.cos(Lat_rad)
 
+# if X and Y are the grid cell centers, this may not be strictly accurate
+# since the diff then is really telling us 0.5*dX[i] + 0.5*dX[i+1], etc.
+# and we know that that grid spacings are not constant in this data
 dY = np.diff(Y, axis=0)
 dX = np.diff(X, axis=1)
 
@@ -139,7 +142,7 @@ cb = plt.colorbar(im, ax=ax2, label="$\Delta y$ [km]")
 
 
 # %% [markdown]
-# 👆 There is no variation in $\Delta y$ zonally, so subtracting the zonal mean zeroes it out. $\Delta x$, however, does have some noise, especially around 132 degE, as we saw in $\Delta$lon.
+# 👆 There is no variation in $\Delta y$ zonally (because $y$ only depends on lat, and our lat only varies in one dim), so subtracting the zonal mean zeroes it out. $\Delta x$, however, does have some noise, especially around 132 degE, as we saw in $\Delta$lon.
 
 # %%
 # TODO: could move to a utils module and add more features
@@ -168,13 +171,30 @@ add121(ax2)
 # 👆 This scatterplot tells us that $\Delta x$ and $\Delta y$ (in meters) are almost the same everywhere in the lat/lon grid. The previous plot shows the grid cell sizes (in both $x$ and $y$) get smaller as latitude increases (i.e., as we move farther from the equator).
 
 # %%
-# just seeing what qrain_cmp looks like
+# just seeing what qrain_cmp looks like / testing log color norm with xarray
 import matplotlib as mpl
 
 plt.figure()
 im = ds.qrain_cmp.plot(
     norm=mpl.colors.LogNorm(vmin=1e-8, vmax=0.015),
     vmin=None,
-    vmax=None,  # mpl still gets mad the xarray is passing these
+    vmax=None,  # mpl 3.3 gets mad because xarray is still passing these
     cmap="gnuplot",
 )
+
+# %% [markdown]
+# Having computed what the true new grid should be, we can compare how data looks in that grid compared to assuming a constant $\Delta x$, $\Delta y$.
+#
+# The milestone instructions suggested 3 km. We saw that the actual values range from about 3.34 to 3.44 km. There are a few things we could do:
+# * assign the center of our lat/lon grid as (0, 0)
+#   - we have 300x300 so somewhere in between 150 and 151, if doing it gridpoint-wise
+#   - taking the mean lat/lon would be fine for lon (zonal dimension) but not lat
+# * assign the center of our calculated x/y grid (km) as (0, 0)
+#   - again, gridpoint-wise this would between points 150 and 151
+#   - could take the mean x, y and use that. might not be too bad if we did that and used the mean delta values as well to construct the new grid.
+# * set lower left or upper right corner as (0, 0)
+#   - this would be pretty boring
+# * find the coordinates of the minimum central pressure and set that as (0, 0)
+# * leave x, y as distance on the sphere from 0 deg. lat/lon
+
+# %%

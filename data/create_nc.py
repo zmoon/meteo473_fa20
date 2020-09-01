@@ -86,13 +86,18 @@ def _remove_extraneous_dim(data, dim):
 
 
 def _data_var(fpath, metadata, *, from_zip=False):
-    """Use the data from the YAML file to make a ``xr.Dataset()`` ``data_vars`` item (tuple).
+    """Use the data from the YAML file to make a ``xr.Dataset()`` ``data_vars`` item.
 
     Optional parameters
     -------------------
     from_zip : bool or ZipFile
         False: assume the ``.npy`` file has already been extracted and read it
         ZipFile: extract the file from the zip into memory and read it
+
+    Returns
+    -------
+    dict
+        a ``data_vars`` entry, for creating an `xr.Dataset`
     """
     name = metadata["name"]  # we fail here if no `name`
     dims = tuple(metadata["dims"])
