@@ -1,7 +1,9 @@
 """
 Create a NetCDF file from the original .npy files using xarray
 """
+from io import BytesIO
 from pathlib import Path
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
@@ -83,11 +85,27 @@ def _remove_extraneous_dim(data, dim):
         raise ValueError(f"dim={dim!r}")
 
 
-def _data_var(fpath, metadata):
-    """Use the data from the YAML file to make a xr.Dataset() data_vars item."""
+def _data_var(fpath, metadata, *, from_zip=False):
+    """Use the data from the YAML file to make a ``xr.Dataset()`` ``data_vars`` item (tuple).
+
+    Optional parameters
+    -------------------
+    from_zip : bool or ZipFile
+        False: assume the ``.npy`` file has already been extracted and read it
+        ZipFile: extract the file from the zip into memory and read it
+    """
     name = metadata["name"]  # we fail here if no `name`
     dims = tuple(metadata["dims"])
-    data = np.load(fpath)
+
+    # load the actual data (a single `np.ndarray` stored in a `.npy` file)
+    if not from_zip:
+        data = np.load(fpath)
+    elif isinstance(from_zip, ZipFile):
+        zf = from_zip
+        fname = fpath.name
+        data = np.load(BytesIO(zf.read(fname)))
+    else:
+        raise TypeError(f"`from_zip` should be False or type ZipFile.")
 
     # corrections for coords
     if name == "lat":
