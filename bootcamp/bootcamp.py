@@ -8,18 +8,25 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.5.2
 #   kernelspec:
-#     display_name: Python [conda env:meteo473_fa20]
+#     display_name: Python 3
 #     language: python
-#     name: conda-env-meteo473_fa20-py
+#     name: python3
 # ---
 # %%
 import ipywidgets
 import matplotlib.pyplot as plt
 import xarray as xr
 
-# #%matplotlib widget
-# ^ not working yet
+# inline plotting (otherwise it can jump when changing in the interact)
+# %matplotlib inline
 # #%matplotlib notebook
+# #%matplotlib widget
+
+plt.rcParams.update(
+    {
+        "figure.autolayout": True,
+    }
+)
 
 # %% [markdown]
 # Load data.
@@ -28,16 +35,18 @@ ds = xr.open_dataset("../data/data.nc")
 ds
 
 # %% [markdown]
-# Pretty-print the list of variables.
+# Pretty-print the list of variables with their attributes.
 
 # %%
 from IPython.display import Markdown
 
-lines = ["name | long_name | units", ":--- |:--- | --- "]
+lines = ["name | long_name | units | long_units | cf_standard_name", ":--- |:--- | --- |:--- |:---"]
 for name, datavar in ds.data_vars.items():
     long_name = datavar.attrs["long_name"]
     units = datavar.attrs.get("units", "missing")
-    lines.append(f"`{name}` | {long_name} | [{units}]")
+    long_units = datavar.attrs.get("long_units", "")
+    cfsn = datavar.attrs.get("cf_standard_name", "")
+    lines.append(f"`{name}` | {long_name} | {units} | {long_units} | {cfsn}")
 
 Markdown("\n".join(lines))
 
@@ -52,7 +61,7 @@ ds["psfc_hPa"] = ds.psfc / 100
 ds.psfc_hPa.attrs.update(
     {"units": "hPa", "long_name": "Sea-level pressure"}
 )  # note: original `long_name` doesn't survive
-ds.psfc_hPa.plot(size=8, cmap="gnuplot_r")
+ds.psfc_hPa.plot(size=7, cmap="gnuplot_r")
 
 # %% [markdown]
 # Zoom in a bit and do contours.
@@ -70,7 +79,7 @@ plt.gca().clabel(cs, inline=True, fontsize=10)
 # Plot OLR (outgoing longwave radiation).
 
 # %%
-ds.olr.plot(size=8, cmap="Spectral_r")
+ds.olr.plot(size=7, cmap="Spectral_r")
 
 
 # %% [markdown]
@@ -94,5 +103,7 @@ def plot(name, plot_type):
 
 
 ipywidgets.interact(
-    plot, name=["psfc_hPa", "olr"], plot_type=["contour", "contourf", "pcolormesh"],
+    plot,
+    name=["psfc_hPa", "olr"],
+    plot_type=["contour", "contourf", "pcolormesh"],
 )
