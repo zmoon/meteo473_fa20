@@ -13,7 +13,8 @@ import yaml
 from rounding import round_array  # noreorder (doesn't seem to be recognized as 1st-party)
 
 
-DATA_ORIG_PATH = "./orig"
+DATA_BASE_PATH = Path(__file__).parent
+DATA_ORIG_PATH = DATA_BASE_PATH / "orig"
 
 
 # TODO: check for missing units, etc. in meta data file
@@ -145,25 +146,30 @@ def _data_var(fpath, metadata, *, from_zip=False):
     return {name: (dims, data, attrs)}
 
 
-def _data_vars(files_data):
+def _data_vars(files_data, *, from_zip=False):
     """Create xr.Dataset dat_vars items for all of the data we have."""
+    if from_zip:
+        zf = ZipFile(DATA_ORIG_PATH / "data.zip")
+    else:
+        zf = False
+
     dvs = {}
     for fname, meta_dict in files_data.items():
-        fpath = f"{DATA_ORIG_PATH}/{fname}"
-        dv = _data_var(fpath, meta_dict)
+        fpath = DATA_ORIG_PATH / fname
+        dv = _data_var(fpath, meta_dict, from_zip=zf)
         dvs.update(dv)
     return dvs
 
 
-def create_ds():
+def create_ds(*, from_zip=False):
     """Create the xr.Dataset using the .npy data and YAML metadata description."""
 
     md = load_metadata()
 
-    dvs_all = _data_vars(md["files"])
+    dvs_all = _data_vars(md["files"], from_zip=from_zip)
 
     # construct height manually based on the MS1 notes
-    shape3d = np.load(f"{DATA_ORIG_PATH}/tInterp.npy").shape
+    shape3d = dvs_all["theta"][1].shape  # 2nd element of the tuple is the actual data
     n_z, n_y, n_x = shape3d
     dz = 500.0  # m
     z = np.arange(0, n_z) * dz
@@ -212,9 +218,9 @@ def write_test_ncs():
         ds2.to_netcdf(f"test_h5netcdf_comp9_nsd={nsd}_bin.nc", engine="h5netcdf", encoding=encoding)
 
 
-def write_nc():
+def write_nc(*, from_zip=False):
     """Write the nc that we will/may actually use."""
-    ds = create_ds()
+    ds = create_ds(from_zip=from_zip)
     comp = {"zlib": True, "complevel": 9}
     encoding = {vn: comp for vn in ds.data_vars}
     ds.to_netcdf("data.nc", engine="h5netcdf", encoding=encoding)
