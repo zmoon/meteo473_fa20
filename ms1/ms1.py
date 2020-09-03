@@ -21,7 +21,9 @@ import xarray as xr
 # %matplotlib widget
 
 plt.rcParams.update(
-    {"figure.autolayout": True,}
+    {
+        "figure.autolayout": True,
+    }
 )
 
 # %% [markdown]
@@ -246,3 +248,135 @@ for ax in [ax1, ax1_2, ax2]:
 
 # %% [markdown]
 # 👆 We see that in the real data, the central $x$ values shift to the west as you move from south to north. If we change how we center the data to account for this, we can see the slight distortion due to the changing in grid cell size (from 3.44 to 3.34 km moving from south to north). Constant grid spacing of 3 km is a bit too small, we can see, but 3.4 km looks nice.
+
+# %%
+# use 3.4 km and reset the coords of the ds
+d_xy_const_km = 3.4
+
+x_const = np.arange(0, 300, dtype=np.float) * d_xy_const_km
+x_const -= x_const.mean()
+y_const = x_const.copy()
+
+ds2 = ds.assign_coords(
+    {
+        "x": (
+            "lon",
+            x_const,
+            {"long_name": f"$x$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
+        ),
+        "y": (
+            "lat",
+            y_const,
+            {"long_name": f"$y$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
+        ),
+    }
+)
+
+# %%
+ds2
+
+# %% [markdown]
+# ## Plots
+
+# %% [markdown]
+# > Make maps of surface QRAIN, composite QRAIN
+
+# %%
+ds2.qrain.isel(hgt=0).plot(x="x", y="y", size=5)
+
+# %%
+ds2.qrain_cmp.plot(x="x", y="y", size=5)
+
+# %% [markdown]
+# > Compute wind speed from U and V.
+#
+# > Use pcolormesh to create maps of wind speed, U and V at 500, 6000 and 15000 geopotential meters
+
+# %%
+ds2["uh"] = np.sqrt(ds.u ** 2 + ds.v ** 2)
+ds2.uh.attrs.update({"long_name": "Horizontal wind speed", "units": "m s$^{-1}$"})
+
+# %%
+levs = [500, 6000, 15000]
+
+
+# TODO: finish this part. should be a 3x3 figure (uh, u, and v at 3 levels)
+
+# colorbar overlays the plots if autolayout is used
+# still can't see the colorbar label
+# could set `add_colorbar` to False and add it manually in its own ax
+# or pass `cbar_ax`...
+# many options here: http://xarray.pydata.org/en/stable/generated/xarray.DataArray.plot.pcolormesh.html
+with plt.rc_context({"figure.autolayout": False}):
+    ds2.uh.sel(hgt=levs).plot.pcolormesh(
+        row="hgt", x="x", y="y", size=3.2, aspect=1.3, cbar_kwargs=dict(shrink=0.5, fraction=0.2)
+    )
+
+# %% [markdown]
+# > Overlay streamlines at 500 geopotential meters on a map of surface rain rate (actually rain water mixing ratio). Hints: use streamplot with U and V and pcolormesh with QRAIN
+
+# %%
+fig, ax = plt.subplots()
+
+# qrain
+ds2.qrain_cmp.plot(ax=ax, x="x", y="y")
+
+# wind streamlines
+u = ds2.u.sel(hgt=500).values
+v = ds2.v.sel(hgt=500).values
+x = ds2.x.values
+y = ds2.y.values
+
+ax.streamplot(x, y, u, v, color="0.6", density=1.2)
+
+# %% [markdown]
+# > Overlay streamlines on potential temperature, both at 6000 geopotential meters
+
+# %%
+fig, ax = plt.subplots()
+
+# potential temp.
+ds2.theta.sel(hgt=6000).plot(ax=ax, x="x", y="y")
+
+# wind streamlines
+u = ds2.u.sel(hgt=6000).values
+v = ds2.v.sel(hgt=6000).values
+x = ds2.x.values
+y = ds2.y.values
+
+ax.streamplot(x, y, u, v, color="0.6", density=1.2)
+
+# %% [markdown]
+# > Overlay streamlines on pcolormesh plots of OLR, both at 15000 geopotential meters)
+
+# %%
+fig, ax = plt.subplots()
+
+# OLR (doesn't vary with height)
+ds2.olr.plot(ax=ax, x="x", y="y")
+
+# wind streamlines
+u = ds2.u.sel(hgt=15000).values
+v = ds2.v.sel(hgt=15000).values
+x = ds2.x.values
+y = ds2.y.values
+
+ax.streamplot(x, y, u, v, color="0.6", density=1.5)
+
+# %% [markdown]
+# Discussion questions to answer:
+#
+# > The latitude and longitude of the storm center (accurate to within 0.05 degrees) and whether the storm is warm or cold core at each of these levels.
+#
+# > Over what range of geopotential heights is the storm warm core?
+#
+# > Are the typhoon’s rainbands and eye wall easier to make out in surface QRAIN or composite QRAIN? Opinions may differ on this, so explain your logic.
+#
+# > What is the relative alignment of the Typhoon’s spiral rainbands and its low-level winds?
+#
+# > Where is the warm air relative to the mid-tropospheric circulation?
+#
+# > What is the relative alignment of the Typhoon’s cirrus cloud spirals and the outflow level winds?
+#
+# > What pressure level(s) does the storm inflow occur at? Outflow?  Which levels are mostly non-divergent?
+#
