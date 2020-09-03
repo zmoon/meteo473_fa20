@@ -139,9 +139,9 @@ def _data_var(fpath, metadata, *, from_zip=False):
     attrs = {k: v for k, v in metadata.items() if k in allowed_attrs}
 
     # add new attrs (new unit strings)
-    attrs["units"], attrs["units_orig"] = units_tex, attrs["units"]
+    attrs["units"], attrs["_units_orig"] = units_tex, attrs["units"]
     if long_units:
-        attrs["long_units"], attrs["long_units_orig"] = long_units_tex, long_units
+        attrs["long_units"], attrs["_long_units_orig"] = long_units_tex, long_units
 
     return {name: (dims, data, attrs)}
 
@@ -174,17 +174,21 @@ def create_ds(*, from_zip=False):
     dz = 500.0  # m
     z = np.arange(0, n_z) * dz
     dv_z = {
-        "height": (
-            "height",
+        "hgt": (  # 3-letter fits better style of `lat`, `lon`
+            "hgt",  # must match name for it to be a coordinate variable
             z,
-            {"units": "m", "long_name": "Geopotential height above the surface plane"},
+            {
+                "units": "m",
+                "long_name": "Geopotential height above the surface plane",
+                "cf_standard_name": "geopotential_height",  # AMIP name `zg`
+            },
         )
     }
     # MS1 notes suggest this it geopotential height
 
     dvs_all.update(dv_z)
 
-    coord_names = ["height", "lat", "lon"]
+    coord_names = ["hgt", "lat", "lon"]
     coords = {name: dvs_all[name] for name in coord_names}
 
     data_vars = {name: dv for name, dv in dvs_all.items() if name not in coord_names}

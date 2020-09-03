@@ -20,10 +20,10 @@ anchors:
   - &dims_x [lon]
   - &dims_y [lat]
   # - &dims_tyx [time, lat, lon]  # or t, y, x? (dims vs coords)
-  # - &dims_tzyx [time, height, lat, lon]  # WRF uses names (Time, bottom_top, south_north, west_east) ?
+  # - &dims_tzyx [time, hgt, lat, lon]  # WRF uses names (Time, bottom_top, south_north, west_east) ?
   # until have date/time info:
   - &dims_tyx [lat, lon]
-  - &dims_tzyx [height, lat, lon]
+  - &dims_tzyx [hgt, lat, lon]
 
 # we have only been given one time (a snapshot from a WRF sim of Typhoon Haiyan)
 # from George: "The original WRF output file included the date and time in the file name. It was 2013-11-07 at 7 Z"
