@@ -7,8 +7,10 @@ dependencies:
   #
   - ipython
   - ipykernel
-  - ipympl  # brings notebook, etc.; for `%matplotlib widget` in Jupyter Lab
+  - ipympl  # brings notebook, etc.; for `%matplotlib widget` in Jupyter Lab/Notebook
   - jupytext
+  - jupyterlab
+  - nodejs
   #
   - xarray
   - netcdf4
