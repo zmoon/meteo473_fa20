@@ -1,3 +1,4 @@
-# for now, not including the original data in the repo
+# now including zipped data
 *
 !.gitignore
+!data.zip
