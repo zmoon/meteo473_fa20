@@ -92,9 +92,9 @@ files:
     dims: *dims_tyx  # original WRF variable QRAIN is tzyx
 
   RAINNC.npy:
-    name: rainnc
-    long_name: Accumulated total precip.  # ?? accumulated (over what?) total in grid cell
-    units: mm
+    name: rainnc  # nc: non-convective
+    long_name: Accumulated rain from non-convective clouds  # ?? accumulated (over what?) total in grid cell
+    units: mm  # (rain volume / xy area of grid cell)
     dims: *dims_tyx
 
   SST.npy:
