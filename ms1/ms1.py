@@ -327,6 +327,7 @@ v = ds2.v.sel(hgt=500).values
 x = ds2.x.values
 y = ds2.y.values
 
+# note: ok to pass meshgrid of x and y instead, they just need to be equally spaced
 ax.streamplot(x, y, u, v, color="0.6", density=1.2)
 
 # %% [markdown]
@@ -364,6 +365,39 @@ y = ds2.y.values
 ax.streamplot(x, y, u, v, color="0.6", density=1.5)
 
 # %% [markdown]
+# What if we wanted to do this plot with lat/lon? We have to interpolate $u$ and $v$ to a lat/lon grid with constant spacing (dlon is already constant, but dlat is not) because `streamplot` only accepts evenly spaced grids.
+
+# %%
+from scipy.interpolate import griddata
+
+u = ds2.u.sel(hgt=15000).values
+v = ds2.v.sel(hgt=15000).values
+
+lat_new = np.linspace(lat[0], lat[-1], 200)
+lon_new = np.linspace(lon[0], lon[-1], 200)
+
+Lon_new, Lat_new = np.meshgrid(lon_new, lat_new)
+
+# this is kind of awkward since have to pass coordinate pairs
+# probably is a better way somewhere...
+coords = (Lon.flatten(), Lat.flatten())
+
+# does seem to work though, but takes a while
+u_new = griddata(coords, u.flatten(), (Lon_new, Lat_new))
+v_new = griddata(coords, v.flatten(), (Lon_new, Lat_new))
+
+fig, ax = plt.subplots()
+
+ds2.olr.plot(ax=ax)
+
+ax.streamplot(lon_new, lat_new, u_new, v_new, color="0.6", density=1.5)
+
+# %% [markdown]
+# Seems like we have lost some of the detail though.
+
+# %% [markdown]
+# ## Questions
+#
 # Discussion questions to answer:
 #
 # > The latitude and longitude of the storm center (accurate to within 0.05 degrees) and whether the storm is warm or cold core at each of these levels.

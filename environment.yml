@@ -19,5 +19,6 @@ dependencies:
   - tabulate  # needed by pd.DataFrame.to_markdown()
   #
   - matplotlib
+  - scipy
   #
   - pylint
