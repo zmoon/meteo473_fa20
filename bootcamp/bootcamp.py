@@ -18,9 +18,9 @@ import matplotlib.pyplot as plt
 import xarray as xr
 
 # inline plotting (otherwise it can jump when changing in the interact)
-# %matplotlib inline
+# #%matplotlib inline
 # #%matplotlib notebook
-# #%matplotlib widget
+# %matplotlib widget
 
 plt.rcParams.update(
     {
@@ -61,14 +61,14 @@ ds["psfc_hPa"] = ds.psfc / 100
 ds.psfc_hPa.attrs.update(
     {"units": "hPa", "long_name": "Sea-level pressure"}
 )  # note: original `long_name` doesn't survive
-ds.psfc_hPa.plot(size=7, cmap="gnuplot_r")
+ds.psfc_hPa.plot(size=6, cmap="gnuplot_r")
 
 # %% [markdown]
 # Zoom in a bit and do contours.
 
 # %%
 cs = ds.psfc_hPa.sel(lon=slice(129.5, 132.5), lat=slice(8.5, 12.5)).plot.contour(
-    size=7, levels=20, aspect=1.1
+    size=6, levels=20, aspect=1.1
 )
 plt.gca().clabel(cs, inline=True, fontsize=10)
 
@@ -79,8 +79,7 @@ plt.gca().clabel(cs, inline=True, fontsize=10)
 # Plot OLR (outgoing longwave radiation).
 
 # %%
-ds.olr.plot(size=7, cmap="Spectral_r")
-
+ds.olr.plot(size=6, cmap="Spectral_r")
 
 # %% [markdown]
 # > Experiment around with contour, contour and pcolormesh and chose the one that looks best for each of the variables.
@@ -88,16 +87,21 @@ ds.olr.plot(size=7, cmap="Spectral_r")
 # I think that pcolormesh is good for OLR and contour for PSFC. The below widget setup allows for easy comparison.
 
 # %%
+fig = plt.figure()
+
+
 def plot(name, plot_type):
+    fig.clear()
+    ax = plt.axes()  # doesn't seem to work just clearing the ax
     da = ds[name]
-    shared_kw = dict(size=8)
+    shared_kw = {}
     if plot_type == "contour":
-        cs = da.plot.contour(levels=20, **shared_kw)
-        plt.gca().clabel(cs, inline=True, fontsize=10)
+        cs = da.plot.contour(levels=20, ax=ax, **shared_kw)
+        ax.clabel(cs, inline=True, fontsize=10)
     elif plot_type == "contourf":
-        da.plot.contourf(levels=20, **shared_kw)
+        da.plot.contourf(levels=20, ax=ax, **shared_kw)
     elif plot_type == "pcolormesh":
-        da.plot.pcolormesh(**shared_kw)
+        da.plot.pcolormesh(ax=ax, **shared_kw)
     else:
         raise ValueError(f"`plot_type` {plot_type!r} no good")
 
