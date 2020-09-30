@@ -288,6 +288,8 @@ ds2.qrain.isel(hgt=0).plot(x="x", y="y", size=5)
 ds2.qrain_cmp.plot(x="x", y="y", size=5)
 
 # %% [markdown]
+# ### Horizontal wind speed at different levels
+#
 # > Compute wind speed from U and V.
 #
 # > Use pcolormesh to create maps of wind speed, U and V at 500, 6000 and 15000 geopotential meters
@@ -313,6 +315,8 @@ with plt.rc_context({"figure.autolayout": False}):
     )
 
 # %% [markdown]
+# ### Streamlines overlaid on things
+#
 # > Overlay streamlines at 500 geopotential meters on a map of surface rain rate (actually rain water mixing ratio). Hints: use streamplot with U and V and pcolormesh with QRAIN
 
 # %%
@@ -393,7 +397,28 @@ ds2.olr.plot(ax=ax)
 ax.streamplot(lon_new, lat_new, u_new, v_new, color="0.6", density=1.5)
 
 # %% [markdown]
-# Seems like we have lost some of the detail though.
+# Looks pretty much the same to my eye.
+
+# %% [markdown]
+# ### Warm core
+#
+# This isn't one of the MS tasks, but one of the discussion questions asks about it.
+
+# %%
+iloc_pmin = ds.psfc.argmin(dim=("lat", "lon"))  # returns indices, not lat/lon values
+
+levs = ds.hgt <= 18000
+
+t = ds.isel(hgt=levs, lat=iloc_pmin["lat"]).theta
+
+tanom = t - t.isel(lon=0)  # kind of arbitrary. really should average over far-field area
+
+tanom.sel(lon=slice(130.6, 131.7)).plot.contourf(
+    levels=50,
+    size=5,
+    cbar_kwargs={"label": rf"$\theta$ anom. (wrt. far-field env.) [°C]"},
+)
+# TODO: estimate tropopause height and plot its line
 
 # %% [markdown]
 # ## Questions
