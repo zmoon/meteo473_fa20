@@ -313,6 +313,32 @@ with plt.rc_context({"figure.autolayout": False}):
     ds2.uh.sel(hgt=levs).plot.pcolormesh(
         row="hgt", x="x", y="y", size=3.2, aspect=1.3, cbar_kwargs=dict(shrink=0.5, fraction=0.2)
     )
+    # note passing axes not supported with facted plots
+
+
+fig, axs = plt.subplots(3, 3, figsize=(10, 7.5), sharex=True, sharey=True)
+
+for i, vn in enumerate(["uh", "u", "v"]):
+
+    ds_vn_i = ds2[vn].sel(hgt=levs)
+    vmm = max(abs(ds_vn_i.min()), abs(ds_vn_i.max()))  # match colorbars using this
+
+    for j, lev in enumerate(levs):
+        ax = axs[j, i]
+
+        ds2[vn].sel(hgt=lev).plot.pcolormesh(
+            x="x",
+            y="y",
+            vmax=vmm,
+            cbar_kwargs=dict(shrink=0.66, fraction=0.3),
+            ax=ax,
+        )
+        if i != 0:
+            ax.set_ylabel("")
+        if j != len(levs) - 1:
+            ax.set_xlabel("")
+
+    # TODO: only need to show one colorbar. can give it an axes in the gridspec and make it big?
 
 # %% [markdown]
 # ### Streamlines overlaid on things
