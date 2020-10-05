@@ -38,6 +38,15 @@ ds = xr.open_dataset("../data/data.nc")
 ds
 
 # %% [markdown]
+# ## Scatter plots
+#
+# Examining relationships using scatter plots and linear fits.
+
+# %% [markdown]
+# ### vs. wind speed
+#
+# (at the lowest level)
+#
 # > Do scatter plots of sensible and latent heat flux vs wind speed.
 #
 # This is supposed to be at the surface, based on the first bullet.
@@ -96,11 +105,13 @@ plot_linear_fit("hfx", "uh", ax=ax1)
 plot_linear_fit("lh", "uh", ax=ax2)
 
 # %% [markdown]
+# ### vs. PBL height
+#
 # > Do scatter plots of surface temperature and humidity vs PBL height.
 #
 # Note that surface temperature and near-surface potential temperature should be close to equivalent.
 
-#%%
+# %%
 # TODO: compute relative humidity??
 
 fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(8.5, 3.8))
@@ -110,6 +121,8 @@ plot_linear_fit("theta", "pblh", ax=ax1)
 plot_linear_fit("qvapor", "pblh", ax=ax2)
 
 # %% [markdown]
+# ## Surface precip. -- spatial relationships
+#
 # > Compare precipitation and spatial patterns in PBL height, surface temperature and surface mixing ratio to determine the origin of the weird patterns in the latter two variables.  Do this either with side by side subplots of precipitation and the other variables or by overlaying two variables on one plot using contour over pcolormesh.
 #
 # Note that `qrain_sfc` is *not* equivalent to `qrain` at the lowest level. About 1/2 of the points are the same though.

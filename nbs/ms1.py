@@ -288,7 +288,7 @@ ds2.qrain.isel(hgt=0).plot(x="x", y="y", size=5)
 ds2.qrain_cmp.plot(x="x", y="y", size=5)
 
 # %% [markdown]
-# ### Horizontal wind speed at different levels
+# ### Wind speeds at different levels
 #
 # > Compute wind speed from U and V.
 #

@@ -166,7 +166,7 @@ def vxs_radial(da, rbins):
 # ds.vtan.isel(hgt=2).plot(size=3)
 # ds.urad.isel(hgt=2).plot(size=3)
 
-not_too_high = ds.hgt < 15000
+not_too_high = ds.hgt <= 15000  # include 15000 for consistency with MS1
 
 vns = ["w", "theta", "qrain", "urad", "vtan"]
 fig, axs = plt.subplots(len(vns), 1, sharex=True, figsize=(8, 16))
@@ -176,14 +176,18 @@ for ax, vn in zip(axs.flat, vns):
 
 
 # %% [markdown]
-# ## Radial average of OLR
+# ## Radial profile of OLR
 
 # %% [markdown]
-# > Plot radially averaged OLR as a function of radius from center of R. Hint: use the same radial bin bin size as for the cross sections above.
+# > Plot azimuthally averaged OLR. Hint: use the same radial bin bin size as for the cross sections above.
+#
+# > Compare your height radius cross section of QRAIN to your radial profile of OLR.  At what geopotential height does the radial distribution of QRAIN best match the radial distribution of OLR?
+#
+# 👆 We can do one better than this: compare radial profiles for `qrain` at each level using `interact`.
 
 # %%
 def radial_prof(da, rbins):
-    assert "hgt" not in da.dims
+    assert "hgt" not in da.dims  # this fn is for a surface variable or one level
     out = np.zeros((rbins.size - 1))
     for i, (r1, r2) in enumerate(zip(rbins[:-1], rbins[1:])):
         in_bin = (r >= r1) & (r < r2)  # leaving one side open for now
@@ -199,26 +203,34 @@ def radial_prof(da, rbins):
 
 
 # interact
+c1, c2 = "red", plt.cm.tab10.colors[0]
 fig, ax = plt.subplots(figsize=(8, 5))
-radial_prof(ds.olr, rbins).plot(ax=ax, c="red")
+radial_prof(ds.olr, rbins).plot(ax=ax, c=c1)
 ax.set_xlim(xmin=0)
 ax2 = ax.twinx()
-ax2.spines["left"].set_color("red")
-ax2.spines["right"].set_color(plt.cm.tab10.colors[0])
+
+# ax2.spines["left"].set(color=c1, linewidth=2)
+ax.yaxis.label.set_color(c1)
+ax.tick_params(axis="y", colors=c1)
+
+# ax2.spines["right"].set(color=c2, linewidth=2)
+ax2.yaxis.label.set_color(c2)
+ax2.tick_params(axis="y", colors=c2)
 
 
 def plot(ilev):
     ax2.cla()
-    radial_prof(ds.qrain.isel(hgt=ilev).squeeze(), rbins).plot(ax=ax2)
+    radial_prof(ds.qrain.isel(hgt=ilev).squeeze(), rbins).plot(ax=ax2, c=c2)
     ax.set_title(f"ilev={ilev}, hgt={ds.hgt.values[ilev]} m")
 
 
-interact(plot, ilev=(0, 26))
+interact(plot, ilev=(0, 30))
 
 # %% [markdown]
-# ## Vertical alignment of precip and OLR?
+# ## Vertical alignment of precip and OLR
 
 # %% [markdown]
 # > Use vertically stacked subplots to compare location of precipitation (surface QRAIN and composite QRAIN) and OLR.
 
 # %%
+# TODO

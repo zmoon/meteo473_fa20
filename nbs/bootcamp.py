@@ -82,6 +82,8 @@ plt.gca().clabel(cs, inline=True, fontsize=10)
 ds.olr.plot(size=6, cmap="Spectral_r")
 
 # %% [markdown]
+# ## Pick-a-plot
+#
 # > Experiment around with contour, contour and pcolormesh and chose the one that looks best for each of the variables.
 #
 # I think that pcolormesh is good for OLR and contour for PSFC. The below widget setup allows for easy comparison.
