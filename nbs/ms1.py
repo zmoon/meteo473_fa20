@@ -50,12 +50,12 @@ ds2 = ds.assign_coords(
         "x": (
             "lon",
             x_const,
-            {"long_name": f"$x$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
+            {"long_name": rf"$x$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
         ),
         "y": (
             "lat",
             y_const,
-            {"long_name": f"$y$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
+            {"long_name": rf"$y$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
         ),
     }
 )
