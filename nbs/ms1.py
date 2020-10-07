@@ -45,7 +45,7 @@ x_const = np.arange(0, 300, dtype=np.float) * d_xy_const_km
 x_const -= x_const.mean()
 y_const = x_const.copy()
 
-ds2 = ds.assign_coords(
+ds = ds.assign_coords(
     {
         "x": (
             "lon",
@@ -61,7 +61,7 @@ ds2 = ds.assign_coords(
 )
 
 # %%
-ds2
+ds
 
 # %% [markdown]
 # ## Plots
@@ -77,9 +77,9 @@ ds2
 # %%
 fig, [ax1, ax2, ax3] = plt.subplots(3, 1, figsize=(5, 8.7), sharex=True, sharey=True)
 
-ds2.qrain.isel(hgt=0).plot(x="x", y="y", ax=ax1)
-ds2.qrain_sfc.plot(x="x", y="y", ax=ax2)
-(ds2.qrain.isel(hgt=0) - ds2.qrain_sfc).plot(x="x", y="y", ax=ax3)
+ds.qrain.isel(hgt=0).plot(x="x", y="y", ax=ax1)
+ds.qrain_sfc.plot(x="x", y="y", ax=ax2)
+(ds.qrain.isel(hgt=0) - ds.qrain_sfc).plot(x="x", y="y", ax=ax3)
 
 for ax in fig.get_axes():
     ax.set_title("")
@@ -92,9 +92,9 @@ for ax in fig.get_axes():
 # %%
 fig, [ax1, ax2, ax3] = plt.subplots(3, 1, figsize=(5, 8.7), sharex=True, sharey=True)
 
-ds2.qrain.isel(hgt=0).plot(x="x", y="y", ax=ax1, norm=mpl.colors.LogNorm(vmin=1e-10, vmax=1e-2))
-ds2.qrain_sfc.plot(x="x", y="y", ax=ax2, norm=mpl.colors.LogNorm(vmin=1e-10, vmax=1e-2))
-(ds2.qrain.isel(hgt=0) - ds2.qrain_sfc).plot(
+ds.qrain.isel(hgt=0).plot(x="x", y="y", ax=ax1, norm=mpl.colors.LogNorm(vmin=1e-10, vmax=1e-2))
+ds.qrain_sfc.plot(x="x", y="y", ax=ax2, norm=mpl.colors.LogNorm(vmin=1e-10, vmax=1e-2))
+(ds.qrain.isel(hgt=0) - ds.qrain_sfc).plot(
     x="x", y="y", ax=ax3, norm=mpl.colors.SymLogNorm(linthresh=1e-5, vmin=-1e-3, vmax=1e-3, base=10)
 )
 
@@ -108,7 +108,7 @@ for ax in fig.get_axes():
 
 # %%
 # can't see much here
-ds2.qrain_cmp.plot(x="x", y="y", size=3.5, aspect=1.5)
+ds.qrain_cmp.plot(x="x", y="y", size=3.5, aspect=1.5)
 
 # better with log color scale
 plt.figure()
@@ -125,8 +125,8 @@ im = ds.qrain_cmp.plot(
 # > Compute wind speed from U and V.
 
 # %%
-ds2["uh"] = np.sqrt(ds.u ** 2 + ds.v ** 2)
-ds2.uh.attrs.update({"long_name": "Horizontal wind speed", "units": "m s$^{-1}$"})
+ds["uh"] = np.sqrt(ds.u ** 2 + ds.v ** 2)
+ds.uh.attrs.update({"long_name": "Horizontal wind speed", "units": "m s$^{-1}$"})
 
 # %% [markdown]
 # > Use pcolormesh to create maps of wind speed, U and V at 500, 6000 and 15000 geopotential meters
@@ -142,7 +142,7 @@ levs = [500, 6000, 15000]
 # or pass `cbar_ax`...
 # many options here: http://xarray.pydata.org/en/stable/generated/xarray.DataArray.plot.pcolormesh.html
 with plt.rc_context({"figure.autolayout": False}):
-    ds2.uh.sel(hgt=levs).plot.pcolormesh(
+    ds.uh.sel(hgt=levs).plot.pcolormesh(
         row="hgt", x="x", y="y", size=2.9, aspect=1.3, cbar_kwargs=dict(shrink=0.5, fraction=0.2)
     )
     # note passing axes not supported with facted plots
@@ -164,7 +164,7 @@ gs = axs[0, 0].get_gridspec()
 
 for i, vn in enumerate(["uh", "u", "v"]):
 
-    ds_vn_i = ds2[vn].sel(hgt=levs)
+    ds_vn_i = ds[vn].sel(hgt=levs)
     vmm = max(abs(ds_vn_i.min()), abs(ds_vn_i.max()))  # match colorbars using this
 
     for j, lev in enumerate(levs):
@@ -175,7 +175,7 @@ for i, vn in enumerate(["uh", "u", "v"]):
                 ax_.remove()
             cbar_ax = fig.add_subplot(gs[:, i * 4 + 2])
 
-        ds2[vn].sel(hgt=lev).plot.pcolormesh(
+        ds[vn].sel(hgt=lev).plot.pcolormesh(
             x="x",
             y="y",
             vmax=vmm,
@@ -213,13 +213,13 @@ for i, vn in enumerate(["uh", "u", "v"]):
 fig, ax = plt.subplots()
 
 # qrain
-ds2.qrain_cmp.plot(ax=ax, x="x", y="y")
+ds.qrain_cmp.plot(ax=ax, x="x", y="y")
 
 # wind streamlines
-u = ds2.u.sel(hgt=500).values
-v = ds2.v.sel(hgt=500).values
-x = ds2.x.values
-y = ds2.y.values
+u = ds.u.sel(hgt=500).values
+v = ds.v.sel(hgt=500).values
+x = ds.x.values
+y = ds.y.values
 
 # note: ok to pass meshgrid of x and y instead, they just need to be equally spaced
 ax.streamplot(x, y, u, v, color="0.6", density=1.2)
@@ -231,13 +231,13 @@ ax.streamplot(x, y, u, v, color="0.6", density=1.2)
 fig, ax = plt.subplots()
 
 # potential temp.
-ds2.theta.sel(hgt=6000).plot(ax=ax, x="x", y="y")
+ds.theta.sel(hgt=6000).plot(ax=ax, x="x", y="y")
 
 # wind streamlines
-u = ds2.u.sel(hgt=6000).values
-v = ds2.v.sel(hgt=6000).values
-x = ds2.x.values
-y = ds2.y.values
+u = ds.u.sel(hgt=6000).values
+v = ds.v.sel(hgt=6000).values
+x = ds.x.values
+y = ds.y.values
 
 ax.streamplot(x, y, u, v, color="0.6", density=1.2)
 
@@ -248,13 +248,13 @@ ax.streamplot(x, y, u, v, color="0.6", density=1.2)
 fig, ax = plt.subplots()
 
 # OLR (doesn't vary with height)
-ds2.olr.plot(ax=ax, x="x", y="y")
+ds.olr.plot(ax=ax, x="x", y="y")
 
 # wind streamlines
-u = ds2.u.sel(hgt=15000).values
-v = ds2.v.sel(hgt=15000).values
-x = ds2.x.values
-y = ds2.y.values
+u = ds.u.sel(hgt=15000).values
+v = ds.v.sel(hgt=15000).values
+x = ds.x.values
+y = ds.y.values
 
 ax.streamplot(x, y, u, v, color="0.6", density=1.5)
 
@@ -264,8 +264,8 @@ ax.streamplot(x, y, u, v, color="0.6", density=1.5)
 # %%
 from scipy.interpolate import griddata
 
-u = ds2.u.sel(hgt=15000).values
-v = ds2.v.sel(hgt=15000).values
+u = ds.u.sel(hgt=15000).values
+v = ds.v.sel(hgt=15000).values
 
 lat = ds.lat.values
 lon = ds.lon.values
@@ -286,7 +286,7 @@ v_new = griddata(coords, v.flatten(), (Lon_new, Lat_new))
 
 fig, ax = plt.subplots()
 
-ds2.olr.plot(ax=ax)
+ds.olr.plot(ax=ax)
 
 ax.streamplot(lon_new, lat_new, u_new, v_new, color="0.6", density=1.5)
 

@@ -79,7 +79,7 @@ x_const = np.arange(0, 300, dtype=np.float) * d_xy_const_km
 x_const -= x_const.mean()
 y_const = x_const.copy()
 
-ds2 = ds.assign_coords(
+ds = ds.assign_coords(
     {
         "x": (
             "lon",
@@ -94,17 +94,17 @@ ds2 = ds.assign_coords(
     }
 )
 
-psfc_min_ds2 = ds2.isel(
+psfc_min_ds = ds.isel(
     ds.psfc.argmin(dim=["lat", "lon"])
 )  # gridpt-wise min (could interpolate tho?)
-psfc_min_ds2
+psfc_min_ds
 
 # %%
 # subtract the center
-x0 = psfc_min_ds2.x.values
-y0 = psfc_min_ds2.y.values
-xrel = ds2.x.values - x0 + 1e-13  # hack to avoid zero-division for now
-yrel = ds2.y.values - y0
+x0 = psfc_min_ds.x.values
+y0 = psfc_min_ds.y.values
+xrel = ds.x.values - x0 + 1e-13  # hack to avoid zero-division for now
+yrel = ds.y.values - y0
 
 # meshgrid
 X, Y = np.meshgrid(xrel, yrel)
@@ -115,13 +115,12 @@ r = np.sqrt(X ** 2 + Y ** 2)
 # we need to ignore that grid point for the theta calc
 is_center = (X == 0) & (Y == 0)
 # assert np.count_nonzero(is_center) == 1
-theta = np.zeros(ds2.psfc.shape)
-theta[~is_center] = np.arctan2(
-    Y[~is_center], X[~is_center]
-)  # arctan2 chooses correct quadrants for you
+theta = np.zeros(ds.psfc.shape)
+theta[~is_center] = np.arctan2(Y[~is_center], X[~is_center])
+# ^ arctan2 chooses correct quadrants for you
 
-# calculate tangential wind speed (positive cyclonic) and radial windspeed (positive inward)
-# does work but more steps!
+# Calculate tangential wind speed (positive cyclonic) and radial windspeed (positive inward)
+# The below does work but uses more steps!
 # uh = np.sqrt(ds.u**2 + ds.v**2)  # horizontal wind magnitude
 # theta_wind = np.arctan2(ds.v.values, ds.u.values)  # wind vector angle (direction)
 # urad = -uh*np.cos(theta_wind - theta)  # radial wind
@@ -131,21 +130,35 @@ theta[~is_center] = np.arctan2(
 vtan = np.cos(theta) * ds.v - np.sin(theta) * ds.u
 urad = -(np.cos(theta) * ds.u + np.sin(theta) * ds.v)
 
+# add radial and tangential velocity to the dataset
 ds["urad"] = urad
 ds.urad.attrs.update({"long_name": "$u$ radial wind (positive inward)", "units": ds.u.units})
 ds["vtan"] = vtan
 ds.vtan.attrs.update({"long_name": "$v$ tangential wind (positive cyclonic)", "units": ds.u.units})
 
-
+# define the radius bins
 rbins = np.arange(0, d_xy_const_km * (120 + 1), 4)
-rbinsc = rbins[:-1] + 0.5 * np.diff(rbins)
+rbinsc = rbins[:-1] + 0.5 * np.diff(rbins)  # bin centers
+
+# indices of which rbin the r at each x,y position belongs to
+# returns index of the right bin edge
+rbin_inds = np.digitize(r, rbins) - 1
+
+# add to the dataset
+ds["r"] = (("lat", "lon"), r, {"long_name": "radius (from TC center)", "units": "km"})
+ds["i_rbin"] = (("lat", "lon"), rbin_inds, {"long_name": "index of radius bin", "units": ""})
 
 # r will be a new coordinate variable / dim
-rcoord_tup = ("r", rbinsc, {"long_name": "radial distance from center", "units": "km"})
+rcoord_tup = (
+    "r",
+    rbinsc,
+    {"long_name": "radial distance from center (radius bin center)", "units": "km"},
+)
 
-# not sure yet if can do this with xarray (maybe a groupby?) or a better way...
-# so let's just loop over levels for now
-def vxs_radial(da, rbins):
+
+def vxs_radial(da, rbins=rbins):
+    # manual binning (using Boolean indexing)
+    # this way we can do it at all heights but not bin by height
     out = np.zeros((da.hgt.size, rbins.size - 1))
     for i, (r1, r2) in enumerate(zip(rbins[:-1], rbins[1:])):
         in_bin = (r >= r1) & (r < r2)  # leaving one side open for now
@@ -160,20 +173,34 @@ def vxs_radial(da, rbins):
     )
 
 
-# check
-# plt.figure()
-# plt.pcolormesh(ds.lon, ds.lat, theta); plt.colorbar()
-# ds.vtan.isel(hgt=2).plot(size=3)
-# ds.urad.isel(hgt=2).plot(size=3)
+def vxs_radial_ds_groupby(ds, rbins=rbins):
+    # This does it for all variables
+    # Timing indicates that it is a bit slower than running vxs_radial for each variable
+    ds_r = ds.groupby("i_rbin").mean()
 
+    # add r as a coordinate variable
+    # unforunately all of the data vars still have i_rbin as a coord
+    ds_r = ds_r.assign_coords(coords={"r": rcoord_tup})
+
+    return ds_r
+
+
+# %% [markdown]
+# Compare the times?
+
+# %%
+# TODO
+
+# %%
 not_too_high = ds.hgt <= 15000  # include 15000 for consistency with MS1
 
 vns = ["w", "theta", "qrain", "urad", "vtan"]
 fig, axs = plt.subplots(len(vns), 1, sharex=True, figsize=(8, 16))
 
 for ax, vn in zip(axs.flat, vns):
-    vxs_radial(ds[vn], rbins).isel(hgt=not_too_high).plot.contourf(levels=40, ax=ax)
-
+    vxs_radial(ds[vn]).isel(hgt=not_too_high).plot.contourf(levels=40, ax=ax)
+    if ax != axs.flat[-1]:
+        ax.set_xlabel("")
 
 # %% [markdown]
 # ## Radial profile of OLR
