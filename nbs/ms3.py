@@ -18,6 +18,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import statsmodels.api as sm
+import statsmodels.formula.api as smf
 import xarray as xr
 
 # from ipywidgets import interact
@@ -150,3 +151,73 @@ for vn, ax in zip(["pblh", "theta", "qvapor"], axs.flat):
     ax.set_title("")
     if ax != axs.flat[-1]:
         ax.set_xlabel("")
+
+# %% [markdown]
+# > In theory, the surface sensible heat flux can be computed using the formula: HFX = C*WindSpeed*(SST-Tsfc), where C is constant. Plot HFX vs WindSpeed*(SST-Tsfc) to see how well this theory holds in a typhoon.  Use linear regression to estimate the value of C.
+
+# %%
+# TODO: could do this earlier
+df = ds.isel(hgt=0).to_dataframe()
+
+df["delta_t"] = df["sst"] - df["theta"]
+
+# `-1` - don't use intercept (constant term) in the model
+# `:`  - only include the multiplied term, not the individuals as well (`*`)
+# note that the fit is much worse (according to R^2) with intercept included
+# scatters look identical tho, just different y values (and different coeffs)
+mod = smf.ols(formula="hfx ~ uh : delta_t -1", data=df)
+res = mod.fit()
+
+print(res.summary())
+# res.summary()
+
+# %%
+fig, ax = plt.subplots(figsize=(4, 3.5))
+ax.scatter(df["hfx"], res.predict(df), marker=".", alpha=0.5)
+ax.set(xlabel="actual hfx", ylabel="predicted hfx")
+p_str = " ".join(f"{c:.4g}$\,${name}" for name, c in res.params.items())
+ax.set_title(f"hfx = {p_str}")
+ax.text(0.02, 0.98, f"$R^2 = {res.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+
+# %% [markdown]
+# A much better model (it seems) includes $\delta T$ as well as the individual temperature terms
+# ($\times U_h$) in a multiple linear regression.
+
+# %%
+mod2 = smf.ols(formula="hfx ~ uh : (delta_t + sst + theta) -1", data=df)
+# this time is only a bit better without intercept (0.042 increase)
+res2 = mod2.fit()
+
+print(res2.summary())
+# res2.summary()
+
+# %%
+fig, ax = plt.subplots(figsize=(4, 4.3))
+ax.scatter(df["hfx"], res2.predict(df), marker=".", alpha=0.5)
+ax.set(xlabel="actual hfx", ylabel="predicted hfx")
+p_str = "\n+ ".join(f"{c:.4g}$\,${name}" for name, c in res2.params.items())
+ax.set_title(f"hfx = {p_str}")
+ax.text(0.02, 0.98, f"$R^2 = {res2.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+
+# %% [markdown]
+# Even better if the individual temperature terms are included as well, in addition to their
+# multiplication with $U_h$.
+
+# %%
+mod3 = smf.ols(formula="hfx ~ uh * (delta_t + sst + theta) -1", data=df)
+# 0.061 increase in R^2 without intercept
+# scatters look identical tho, just different y values
+res3 = mod3.fit()
+
+print(res3.summary())
+# res2.summary()
+
+# %%
+fig, ax = plt.subplots(figsize=(4, 4.8))
+ax.scatter(df["hfx"], res3.predict(df), marker=".", alpha=0.5)
+ax.set(xlabel="actual hfx", ylabel="predicted hfx")
+p_str = "\n+ ".join(f"{c:.4g}$\,${name}" for name, c in res3.params.items())
+ax.set_title(f"hfx = {p_str}")
+ax.text(0.02, 0.98, f"$R^2 = {res3.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+
+# TODO: loop over formulas / make fn so don't have to repeat all this code
