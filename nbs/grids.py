@@ -14,9 +14,15 @@
 #     name: python3
 # ---
 # %%
+import sys
+
+sys.path.append("../")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+
+import data
 
 # %matplotlib widget
 
@@ -98,26 +104,9 @@ fig.tight_layout()
 # 300x300
 Lon, Lat = np.meshgrid(lon, lat)  # note: still deg. here
 
-r_e = 6.371e6  # mean Earth radius (m)
-
-
-def latlon_to_xy(lat_deg, lon_deg):
-    lon_rad, lat_rad = np.deg2rad(lon_deg), np.deg2rad(lat_deg)
-    y = r_e * lat_rad
-    x = r_e * lon_rad * np.cos(lat_rad)
-    return x, y
-
-
-def xy_to_latlon(x_m, y_m):
-    lat_rad = y_m / r_e
-    lon_rad = x_m / (r_e * np.cos(lat_rad))
-    lat_deg, lon_deg = np.rad2deg(lat_rad), np.rad2deg(lon_rad)
-    return lat_deg, lon_deg
-
-
 # convert the lat/lon meshgrid to x/y
-X, Y = latlon_to_xy(Lat, Lon)
-assert np.allclose(np.hstack((Lat, Lon)), np.hstack((xy_to_latlon(X, Y))))
+X, Y = data.latlon_to_xy_sphere(Lat, Lon)
+assert np.allclose(np.hstack((Lat, Lon)), np.hstack((data.xy_to_latlon_sphere(X, Y))))
 
 # if X and Y are the grid cell centers,
 # these are the distance between grid cell centers, not strictly the grid cell sizes
@@ -226,7 +215,7 @@ y_const = x_const.copy()
 X_const, Y_const = np.meshgrid(x_const, y_const)
 
 # true
-X0, Y0 = latlon_to_xy(Lat, Lon)
+X0, Y0 = data.latlon_to_xy_sphere(Lat, Lon)
 X0_1 = X0 - np.mean(X0)  # subtract overall mean
 Y0_1 = Y0 - np.mean(Y0)
 X0_2 = X0 - np.mean(X0, axis=1)[:, np.newaxis]  # subtract zonal mean from each row

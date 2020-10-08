@@ -53,6 +53,23 @@ def add_xy_coords(ds, dx, dy, *, units="km", center=True):
     return ds
 
 
+MEAN_EARTH_RADIUS = 6.371e6  # mean Earth radius (m)
+
+
+def latlon_to_xy_sphere(lat_deg, lon_deg, r_e=MEAN_EARTH_RADIUS):
+    lon_rad, lat_rad = np.deg2rad(lon_deg), np.deg2rad(lat_deg)
+    y = r_e * lat_rad
+    x = r_e * lon_rad * np.cos(lat_rad)
+    return x, y
+
+
+def xy_to_latlon_sphere(x_m, y_m, r_e=MEAN_EARTH_RADIUS):
+    lat_rad = y_m / r_e
+    lon_rad = x_m / (r_e * np.cos(lat_rad))
+    lat_deg, lon_deg = np.rad2deg(lat_rad), np.rad2deg(lon_rad)
+    return lat_deg, lon_deg
+
+
 def regrid_xy(ds):
     """Regrid from lat/lon grid to x/y grid."""
     raise NotImplementedError

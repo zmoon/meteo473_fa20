@@ -47,6 +47,8 @@ ds
 # > Plot vertical cross sections for the center of the eye out to a radius of 120 grid points of the azimuthally averaged vertical velocity, potential temperature, QRAIN, tangential wind speed (positive cyclonic) and radial wind speed (positive inward). Hint: use 6 km radial bins as a starting point, but tune this number up if your figure is noisy or down if it lacks detail.  Don’t expect smooth results near the eye and eye-wall where you’re averaging only a few points.
 
 # %% [markdown]
+# ### Finding the center
+#
 # We need to define the center of the eye. Let's try minimum central pressure.
 
 # %%
