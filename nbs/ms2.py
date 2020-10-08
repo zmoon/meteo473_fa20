@@ -14,10 +14,16 @@
 #     name: python3
 # ---
 # %%
+import sys
+
+sys.path.append("../")
+
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from ipywidgets import interact
+
+import data
 
 # %matplotlib widget
 
@@ -70,29 +76,10 @@ ax.legend()
 # Now need to express our coordinates in terms of $r$ (wrt. $r_0$), $\theta$, so that we can do the radial binning.
 
 # %%
-# TODO: move this stuff (copied from ms1) to a module, so can easily select this method or the more accurate one
-
 # use 3.4 km
 d_xy_const_km = 3.4
 
-x_const = np.arange(0, 300, dtype=np.float) * d_xy_const_km
-x_const -= x_const.mean()
-y_const = x_const.copy()
-
-ds = ds.assign_coords(
-    {
-        "x": (
-            "lon",
-            x_const,
-            {"long_name": f"$x$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
-        ),
-        "y": (
-            "lat",
-            y_const,
-            {"long_name": f"$y$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
-        ),
-    }
-)
+ds = data.add_xy_coords(ds, dx=d_xy_const_km, dy=d_xy_const_km, units="km")
 
 psfc_min_ds = ds.isel(
     ds.psfc.argmin(dim=["lat", "lon"])

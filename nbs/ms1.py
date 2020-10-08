@@ -14,10 +14,16 @@
 #     name: python3
 # ---
 # %%
+import sys
+
+sys.path.append("../")
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+
+import data
 
 # %matplotlib widget
 
@@ -41,26 +47,7 @@ ds
 # use 3.4 km and reset the coords of the ds
 d_xy_const_km = 3.4
 
-x_const = np.arange(0, 300, dtype=np.float) * d_xy_const_km
-x_const -= x_const.mean()
-y_const = x_const.copy()
-
-ds = ds.assign_coords(
-    {
-        "x": (
-            "lon",
-            x_const,
-            {"long_name": rf"$x$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
-        ),
-        "y": (
-            "lat",
-            y_const,
-            {"long_name": rf"$y$ (const $\Delta x = {d_xy_const_km}$)", "units": "km"},
-        ),
-    }
-)
-
-# %%
+ds = data.add_xy_coords(ds, dx=d_xy_const_km, dy=d_xy_const_km, units="km")
 ds
 
 # %% [markdown]

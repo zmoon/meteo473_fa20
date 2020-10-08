@@ -10,7 +10,7 @@ import pandas as pd
 import xarray as xr
 import yaml
 
-from rounding import round_array  # noreorder (doesn't seem to be recognized as 1st-party)
+from .rounding import round_array  # noreorder (doesn't seem to be recognized as 1st-party)
 
 
 DATA_BASE_PATH = Path(__file__).parent
