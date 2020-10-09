@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import xarray as xr
 
@@ -70,6 +72,103 @@ def xy_to_latlon_sphere(x_m, y_m, r_e=MEAN_EARTH_RADIUS):
     return lat_deg, lon_deg
 
 
-def regrid_xy(ds):
-    """Regrid from lat/lon grid to x/y grid."""
-    raise NotImplementedError
+# def regrid_latlon_to_xy(ds):
+#     """Regrid from lat/lon grid to a similar x/y grid using xESMF."""
+#     import xesmf as xe
+
+#     # current grid
+#     lat0 = ds.lat.values
+#     lon0 = ds.lon.values
+#     Lon0, Lat0 = np.meshgrid(lon0, lat0)
+
+#     # desired grid
+#     # for now, shooting for linearly spaced (in xy on sphere) between x and y boundaries
+#     x0, y0 = latlon_to_xy_sphere(Lat0, Lon0)
+#     x1, x2 = x0[0], x0[-1]
+#     y1, y2 = y0[0], y0[-1]
+#     nx, ny = x0.size, y0.size
+#     x = np.linspace(x1, x2, nx)
+#     y = np.linspace(y1, y2, ny)
+#     lat
+
+#     new_grid = xr.Dataset(
+#         {
+#             'lat': (['lat'], lat),
+#             'lon': (['lon'], lon),
+#         }
+#     )
+
+#     regridder = xe.Regridder(ds, new_grid, 'bilinear')
+
+#     return regridder(ds)
+
+
+def regrid_latlon_const(ds, *, nlat=None, nlon=None, method="bilinear"):
+    """Regrid to a grid with the same lat/lon boundaries but constant dlat,dlon."""
+    import xesmf as xe
+
+    # to float64
+    ds["lat"] = ds.lat.astype(np.float64)
+    ds["lon"] = ds.lon.astype(np.float64)
+
+    # original
+    lat0 = ds.lat.values
+    lon0 = ds.lon.values
+    dlat0 = np.diff(lat0)
+    dlon0 = np.diff(lon0)
+
+    # total distance from the grid cell center on one boundary to the other
+    # dlat_tot = abs(lat0[-1] - lat0[0])
+    # dlon_tot = abs(lon0[-1] - lon0[0])
+
+    assert np.all(dlat0 >= 0)  # monotonic increasing
+    assert np.all(dlon0 >= 0)
+
+    # number of points
+    nlat = nlat or lat0.size
+    nlon = nlon or lon0.size
+
+    # ----
+    # new grid -- evenly spaced in lat and lon
+
+    # should be able to do this but it sometimes doesn't work
+    lat_edges = np.linspace(lat0[0] - 0.5 * dlat0[0], lat0[-1] + 0.5 * dlat0[-1], nlat + 1)
+    lon_edges = np.linspace(lon0[0] - 0.5 * dlon0[0], lon0[-1] + 0.5 * dlon0[-1], nlon + 1)
+
+    # so ignoring some of the edge
+    # lat_edges = np.linspace(lat0[0], lat0[-1], nlat+1)
+    # lon_edges = np.linspace(lon0[0], lon0[-1], nlon+1)
+
+    # centers from edges
+    lat = lat_edges[:-1] + 0.5 * np.diff(lat_edges)
+    lon = lon_edges[:-1] + 0.5 * np.diff(lon_edges)
+    # TODO: need to properly make sure none of the new grid cell edges extend beyond old!
+    # ESMF seems very sensitive to this
+
+    # this doesn't work in some cases
+    # lat = np.linspace(lat0[0], lat0[-1], nlat)
+    # lon = np.linspace(lon0[0], lon0[-1], nlon)
+
+    # whatever makes it mess up seems to be related to points or edges outside of the original
+    # but in the example going to global grid that happens and it works fine...
+    if lon[0] < lon0[0] or lon[-1] > lon0[-1] or lat[0] < lat0[0] or lat[-1] > lat0[-1]:
+        warnings.warn(
+            "One of the new centers is outside the original.\n"
+            f"Original: ({lat0[0]}, {lon0[0]}) ({lat0[-1]}, {lon0[-1]})  (lat, lon; lower-left and upper-right corners)\n"
+            f"New:      ({lat[0]}, {lon[0]}) ({lat[-1]}, {lon[-1]})"
+        )
+
+    new_grid = xr.Dataset(
+        {
+            "lat": (["lat"], lat),
+            "lon": (["lon"], lon),
+        }
+    )
+    # TODO: match attrs for lat/lon and dataset to original
+
+    # a test
+    # new_grid = xe.util.grid_global(0.25, 0.25)
+
+    regridder = xe.Regridder(ds, new_grid, method=method)
+
+    return regridder(ds, keep_attrs=True)

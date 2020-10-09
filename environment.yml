@@ -5,6 +5,7 @@ channels:
 dependencies:
   - python=3.7
   #
+  # environment
   - ipython
   - ipykernel
   - ipympl  # brings notebook, etc.; for `%matplotlib widget` in Jupyter Lab/Notebook
@@ -12,14 +13,19 @@ dependencies:
   - jupyterlab
   - nodejs
   #
-  - xarray
+  # data
   - netcdf4
   - h5netcdf  # depends on h5py
   - pyyaml
   - tabulate  # needed by pd.DataFrame.to_markdown()
   #
+  # analysis, scientific tools
+  - xarray
   - matplotlib
   - scipy
   - statsmodels
+  - xesmf
+  - esmpy=7.1.0  # https://xesmf.readthedocs.io/en/latest/installation.html#install-on-local-machine-with-conda
   #
+  # dev tools
   - pylint

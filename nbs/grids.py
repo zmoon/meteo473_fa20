@@ -240,3 +240,59 @@ for ax in [ax1, ax1_2, ax2]:
 
 # %% [markdown]
 # 👆 We see that in the real data, the central $x$ values shift to the west as you move from south to north. If we change how we center the data to account for this, we can see the slight distortion due to the changing in grid cell size (from 3.44 to 3.34 km moving from south to north). Constant grid spacing of 3 km is a bit too small, we can see, but 3.4 km looks nice.
+
+# %% [markdown]
+# ## Regridding
+
+# %%
+# ESMF really has trouble with this dataset when points in the new grid are outside. which is supposed to be fine
+
+ds2 = data.regrid_latlon_const(ds.isel(hgt=0), nlat=250, nlon=250)
+# explicit grid cell bounds `lat_b` `lon_b` are needed to use the conservative algo
+
+ds2.theta.plot(size=4)
+
+# %%
+ds.theta.isel(hgt=0).plot(size=4)
+
+# %%
+ds2.lat
+
+# %%
+ds.lat
+
+# %%
+ds2.lon
+
+# %%
+ds.lon
+
+# %%
+ds["lon"] = ds.lon.astype(np.float64)
+
+# %%
+ds.lon.dtype
+
+# %%
+ds.lat.dtype
+
+# %% [markdown]
+# ### xESMF example
+
+# %%
+import xesmf as xe
+
+ds3 = xr.tutorial.open_dataset("rasm").rename({"xc": "lon", "yc": "lat"})
+
+# ds3 = ds3.sel(x=ds3.x < 150)
+
+new_grid = xe.util.grid_global(5, 4)
+
+ds3_new = xe.Regridder(ds3, new_grid, "bilinear")(ds3)
+
+ds3_new.isel(time=0).Tair.plot(x="lon", y="lat", size=4)
+
+# %%
+ds3.lon
+
+# %%
