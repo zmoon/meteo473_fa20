@@ -245,9 +245,10 @@ for ax in [ax1, ax1_2, ax2]:
 # ## Regridding
 
 # %%
-# ESMF really has trouble with this dataset when points in the new grid are outside. which is supposed to be fine
+# ESMF really has trouble with this dataset when points in the new grid are outside.
+# which is supposed to be fine based on other examples, but somehow it breaks everything
 
-ds2 = data.regrid_latlon_const(ds.isel(hgt=0), nlat=250, nlon=250)
+ds2 = data.regrid_latlon_const(ds.isel(hgt=0), nlat=300, nlon=300)
 # explicit grid cell bounds `lat_b` `lon_b` are needed to use the conservative algo
 
 ds2.theta.plot(size=4)

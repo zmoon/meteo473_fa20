@@ -24,8 +24,15 @@ dependencies:
   - matplotlib
   - scipy
   - statsmodels
-  - xesmf
-  - esmpy=7.1.0  # https://xesmf.readthedocs.io/en/latest/installation.html#install-on-local-machine-with-conda
+  # - xesmf
+  # - esmpy=7.1.0  # https://xesmf.readthedocs.io/en/latest/installation.html#install-on-local-machine-with-conda
+  #
+  # pangeo xesmf (not yet released) via pip
+  - esmpy>=8.0.0
+  - pip
+  - pip:
+    - git+https://github.com/pangeo-data/xESMF#egg=xesmf  # master
+    # - git+https://github.com/pangeo-data/xESMF.git@v0.4.0#egg=xesmf  # last (GitHub) release
   #
   # dev tools
   - pylint

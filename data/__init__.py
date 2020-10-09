@@ -132,22 +132,22 @@ def regrid_latlon_const(ds, *, nlat=None, nlon=None, method="bilinear"):
     # new grid -- evenly spaced in lat and lon
 
     # should be able to do this but it sometimes doesn't work
-    lat_edges = np.linspace(lat0[0] - 0.5 * dlat0[0], lat0[-1] + 0.5 * dlat0[-1], nlat + 1)
-    lon_edges = np.linspace(lon0[0] - 0.5 * dlon0[0], lon0[-1] + 0.5 * dlon0[-1], nlon + 1)
+    # lat_edges = np.linspace(lat0[0] - 0.5 * dlat0[0], lat0[-1] + 0.5 * dlat0[-1], nlat + 1)
+    # lon_edges = np.linspace(lon0[0] - 0.5 * dlon0[0], lon0[-1] + 0.5 * dlon0[-1], nlon + 1)
 
     # so ignoring some of the edge
     # lat_edges = np.linspace(lat0[0], lat0[-1], nlat+1)
     # lon_edges = np.linspace(lon0[0], lon0[-1], nlon+1)
 
     # centers from edges
-    lat = lat_edges[:-1] + 0.5 * np.diff(lat_edges)
-    lon = lon_edges[:-1] + 0.5 * np.diff(lon_edges)
+    # lat = lat_edges[:-1] + 0.5 * np.diff(lat_edges)
+    # lon = lon_edges[:-1] + 0.5 * np.diff(lon_edges)
     # TODO: need to properly make sure none of the new grid cell edges extend beyond old!
     # ESMF seems very sensitive to this
 
-    # this doesn't work in some cases
-    # lat = np.linspace(lat0[0], lat0[-1], nlat)
-    # lon = np.linspace(lon0[0], lon0[-1], nlon)
+    # this is fine for non-conservative?
+    lat = np.linspace(lat0[0], lat0[-1], nlat)
+    lon = np.linspace(lon0[0], lon0[-1], nlon)
 
     # whatever makes it mess up seems to be related to points or edges outside of the original
     # but in the example going to global grid that happens and it works fine...
@@ -166,9 +166,8 @@ def regrid_latlon_const(ds, *, nlat=None, nlon=None, method="bilinear"):
     )
     # TODO: match attrs for lat/lon and dataset to original
 
-    # a test
-    # new_grid = xe.util.grid_global(0.25, 0.25)
-
-    regridder = xe.Regridder(ds, new_grid, method=method)
+    regridder = xe.Regridder(ds, new_grid, method=method, extrap_method="inverse_dist")
+    # setting `extrap_method` seems to alleviate the issues was having (setting all to one value)
+    # TODO: document what the options are/mean...
 
     return regridder(ds, keep_attrs=True)
