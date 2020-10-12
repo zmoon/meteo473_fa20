@@ -20,6 +20,7 @@ import numpy as np
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import xarray as xr
+from utils import add121
 
 # from ipywidgets import interact
 
@@ -153,6 +154,8 @@ for vn, ax in zip(["pblh", "theta", "qvapor"], axs.flat):
         ax.set_xlabel("")
 
 # %% [markdown]
+# ## Linear model of surface sensible heat flux
+#
 # > In theory, the surface sensible heat flux can be computed using the formula: HFX = C*WindSpeed*(SST-Tsfc), where C is constant. Plot HFX vs WindSpeed*(SST-Tsfc) to see how well this theory holds in a typhoon.  Use linear regression to estimate the value of C.
 
 # %%
@@ -161,63 +164,67 @@ df = ds.isel(hgt=0).to_dataframe()
 
 df["delta_t"] = df["sst"] - df["theta"]
 
-# `-1` - don't use intercept (constant term) in the model
+
+def fit_hfx_formula_and_plot(formula, *, print_summary=True, limits="max"):
+    # construct linear model and fit
+    mod = smf.ols(formula=formula, data=df)
+    res = mod.fit()
+
+    if print_summary:
+        print(res.summary())
+
+    fig, ax = plt.subplots(figsize=(6.5, 4.0))
+
+    # plot modeled vs actual
+    ax.scatter(df["hfx"], res.predict(df), marker="o", s=15, alpha=0.5, linewidths=0)
+    ax.set(xlabel="actual hfx", ylabel="predicted hfx")
+
+    # plot 1-1 line
+    add121(ax, limits=limits)
+
+    # show coeffs in the title
+    p_str = "\n+ ".join(f"{c:.4g}$\,${name}" for name, c in res.params.items())
+    # ax.set_title(f"hfx = {p_str}", fontsize=10)
+    ax.text(1.05, 0.9, f"hfx = {p_str}", ha="left", va="top", transform=ax.transAxes, fontsize=10)
+
+    # show R^2
+    ax.text(0.02, 0.98, f"$R^2 = {res.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+
+
+# `-1` - don't use intercept (constant term) in the model (the directions suggest that we shouldn't include one)
 # `:`  - only include the multiplied term, not the individuals as well (`*`)
 # note that the fit is much worse (according to R^2) with intercept included
 # scatters look identical tho, just different y values (and different coeffs)
-mod = smf.ols(formula="hfx ~ uh : delta_t -1", data=df)
-res = mod.fit()
-
-print(res.summary())
-# res.summary()
+fit_hfx_formula_and_plot("hfx ~ uh : delta_t -1")
 
 # %%
-fig, ax = plt.subplots(figsize=(4, 3.5))
-ax.scatter(df["hfx"], res.predict(df), marker=".", alpha=0.5)
-ax.set(xlabel="actual hfx", ylabel="predicted hfx")
-p_str = " ".join(f"{c:.4g}$\,${name}" for name, c in res.params.items())
-ax.set_title(f"hfx = {p_str}")
-ax.text(0.02, 0.98, f"$R^2 = {res.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+fit_hfx_formula_and_plot("hfx ~ uh : delta_t", print_summary=False)  # intercept included
 
 # %% [markdown]
+# 👆 With intercept included, the computer $R^2$ value is much lower. The scatter looks identical (with auto plot settings, not square), except that the range of $y$ values is different.
+#
 # A much better model (it seems) includes $\delta T$ as well as the individual temperature terms
-# ($\times U_h$) in a multiple linear regression.
+# ($\times \, U_h$) in a multiple linear regression.
 
 # %%
-mod2 = smf.ols(formula="hfx ~ uh : (delta_t + sst + theta) -1", data=df)
+fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + theta) -1")
 # this time is only a bit better without intercept (0.042 increase)
-res2 = mod2.fit()
-
-print(res2.summary())
-# res2.summary()
-
-# %%
-fig, ax = plt.subplots(figsize=(4, 4.3))
-ax.scatter(df["hfx"], res2.predict(df), marker=".", alpha=0.5)
-ax.set(xlabel="actual hfx", ylabel="predicted hfx")
-p_str = "\n+ ".join(f"{c:.4g}$\,${name}" for name, c in res2.params.items())
-ax.set_title(f"hfx = {p_str}")
-ax.text(0.02, 0.98, f"$R^2 = {res2.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
 
 # %% [markdown]
+# 👆 We can see that there is a pretty strong linear relationship between the predicted and actual `hfx`. However, the values are underpredicted on average.
+#
 # Even better if the individual temperature terms are included as well, in addition to their
 # multiplication with $U_h$.
 
 # %%
-mod3 = smf.ols(formula="hfx ~ uh * (delta_t + sst + theta) -1", data=df)
+fit_hfx_formula_and_plot("hfx ~ uh * (delta_t + sst + theta) -1")
 # 0.061 increase in R^2 without intercept
 # scatters look identical tho, just different y values
-res3 = mod3.fit()
-
-print(res3.summary())
-# res2.summary()
 
 # %%
-fig, ax = plt.subplots(figsize=(4, 4.8))
-ax.scatter(df["hfx"], res3.predict(df), marker=".", alpha=0.5)
-ax.set(xlabel="actual hfx", ylabel="predicted hfx")
-p_str = "\n+ ".join(f"{c:.4g}$\,${name}" for name, c in res3.params.items())
-ax.set_title(f"hfx = {p_str}")
-ax.text(0.02, 0.98, f"$R^2 = {res3.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+fit_hfx_formula_and_plot(
+    "hfx ~ uh * (delta_t + sst + theta)", print_summary=False
+)  # intercept included
 
-# TODO: loop over formulas / make fn so don't have to repeat all this code
+# %% [markdown]
+# 👆 We noticed that---according to `statsmodels`---the $R^2$ values are better (closer to 1) when an intercept is not included in the model. This seems to be because `statsmodels` uses the uncentered $R^2$ formula in this case. The scatter looks essentially identical in both cases; unlike the first, simplest model, there is not a discernible difference in the range of $y$ values, although we can see that the coefficients have changed.

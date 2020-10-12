@@ -23,6 +23,7 @@ import numpy as np
 import xarray as xr
 
 import data
+from utils import add121
 
 # %matplotlib widget
 
@@ -164,17 +165,6 @@ cb = plt.colorbar(im, ax=ax2, label=r"$\Delta y$ [km]")
 # ### Grid spacing scatter
 
 # %%
-# TODO: could move to a utils module and add more features
-def add121(ax):
-    xlim, ylim = ax.get_xlim(), ax.get_ylim()
-    xmin, xmax = xlim
-    ymin, ymax = ylim
-    xymin, xymax = min(xmin, ymin), max(xmax, ymax)
-    ax.plot([xymin, xymax], [xymin, xymax], "-", c="0.7", zorder=1, label="1-1")
-    ax.set_xlim(xlim)
-    ax.set_ylim(ylim)
-
-
 fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(5, 7), sharex=True, sharey=True)
 
 ax1.plot(dX.flat, dY.flat, ".", ms=2, alpha=0.3)
