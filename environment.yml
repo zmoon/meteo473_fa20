@@ -28,7 +28,7 @@ dependencies:
   # - esmpy=7.1.0  # https://xesmf.readthedocs.io/en/latest/installation.html#install-on-local-machine-with-conda
   #
   # pangeo xesmf (not yet released) via pip
-  - esmpy>=8.0.0
+  - esmpy>=8.0.0  # ! not available for Windows
   - pip
   - pip:
     - git+https://github.com/pangeo-data/xESMF#egg=xesmf  # master
