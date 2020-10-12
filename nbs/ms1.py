@@ -288,15 +288,17 @@ ax.streamplot(lon_new, lat_new, u_new, v_new, color="0.6", density=1.5)
 # %%
 iloc_pmin = ds.psfc.argmin(dim=("lat", "lon"))  # returns indices, not lat/lon values
 
-levs = ds.hgt <= 18000
+levs = ds.hgt <= 22000
 
 t = ds.isel(hgt=levs, lat=iloc_pmin["lat"]).theta
 
-tanom = t - t.isel(lon=0)  # kind of arbitrary. really should average over far-field area
+tanom = t - t.isel(lon=0)
+# TODO: kind of arbitrary. really should average over far-field area, maybe define a min radius
 
 tanom.sel(lon=slice(130.6, 131.7)).plot.contourf(
     levels=50,
-    size=5,
+    size=5.5,
+    aspect=1.1,
     cbar_kwargs={"label": rf"$\theta$ anom. (wrt. far-field env.) [°C]"},
 )
 # TODO: estimate tropopause height and plot its line
