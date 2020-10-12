@@ -18,8 +18,8 @@ Current steps for setting up after a fresh clone of the repo.
 
    For example:
    ```
-   cd data
-   python -c 'import create_nc; create_nc.write_nc(from_zip=True)'
+   # at repo root
+   python -c 'import data; data.write_nc()'
    ```
 
 4. Install the pre-commit Git hooks with `pre-commit install --install-hooks`

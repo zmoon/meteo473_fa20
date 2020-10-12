@@ -55,7 +55,7 @@ def check_dupes(l):
 
 
 def load_metadata():
-    with open("data.yml", "r") as f:
+    with open(DATA_BASE_PATH / "data.yml", "r") as f:
         metadata = yaml.load(f, Loader=yaml.FullLoader)
 
     # check names for duplicates
@@ -222,12 +222,12 @@ def write_test_ncs():
         ds2.to_netcdf(f"test_h5netcdf_comp9_nsd={nsd}_bin.nc", engine="h5netcdf", encoding=encoding)
 
 
-def write_nc(*, from_zip=False):
+def write_nc(*, from_zip=True):
     """Write the nc that we will/may actually use."""
     ds = create_ds(from_zip=from_zip)
     comp = {"zlib": True, "complevel": 9}
     encoding = {vn: comp for vn in ds.data_vars}
-    ds.to_netcdf("data.nc", engine="h5netcdf", encoding=encoding)
+    ds.to_netcdf(DATA_BASE_PATH / "data.nc", engine="h5netcdf", encoding=encoding)
 
 
 def convert_bytes(num):
