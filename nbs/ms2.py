@@ -205,23 +205,29 @@ for ax, vn in zip(axs.flat, vns):
 def radial_prof(da, rbins):
     assert "hgt" not in da.dims  # this fn is for a surface variable or one level
     out = np.zeros((rbins.size - 1))
+    qs = [0.25, 0.75]
+    out_q = np.zeros((rbins.size - 1, len(qs)))
     for i, (r1, r2) in enumerate(zip(rbins[:-1], rbins[1:])):
         in_bin = (r >= r1) & (r < r2)  # leaving one side open for now
-        out[i] = da.values[in_bin].mean()
+        data_in_bin = da.values[in_bin]
+        out[i] = np.median(data_in_bin)  # data_in_bin.mean()
+        out_q[i] = np.quantile(data_in_bin, qs)
 
-    return xr.DataArray(
-        dims=["r"],
-        coords={"r": rcoord_tup},
-        data=out,
-        name=da.name,
-        attrs=da.attrs,
+    return xr.Dataset(
+        coords={
+            "r": rcoord_tup,
+            "q": ("q", [0.25, 0.75], {"long_name": "quantile"}),
+        },
+        data_vars={da.name: ("r", out, da.attrs), f"{da.name}_q": (("r", "q"), out_q)},
     )
 
 
 # interact
 c1, c2 = "red", plt.cm.tab10.colors[0]
 fig, ax = plt.subplots(figsize=(8, 5))
-radial_prof(ds.olr, rbins).plot(ax=ax, c=c1)
+dsr_olr = radial_prof(ds.olr, rbins)
+ax.fill_between(dsr_olr.r, dsr_olr.olr_q.isel(q=0), dsr_olr.olr_q.isel(q=-1), color=c1, alpha=0.4)
+ds_.olr.plot(ax=ax, c=c1)
 ax.set_xlim(xmin=0)
 ax2 = ax.twinx()
 
@@ -234,13 +240,17 @@ ax2.yaxis.label.set_color(c2)
 ax2.tick_params(axis="y", colors=c2)
 
 
-def plot(ilev):
+def plot(ilev=8):
     ax2.cla()
-    radial_prof(ds.qrain.isel(hgt=ilev).squeeze(), rbins).plot(ax=ax2, c=c2)
+    dsr_qrain = radial_prof(ds.qrain.isel(hgt=ilev).squeeze(), rbins)
+    ax2.fill_between(
+        dsr_qrain.r, dsr_qrain.qrain_q.isel(q=0), dsr_qrain.qrain_q.isel(q=-1), color=c2, alpha=0.4
+    )
+    dsr_qrain.qrain.plot(ax=ax2, c=c2)
     ax.set_title(f"ilev={ilev}, hgt={ds.hgt.values[ilev]} m")
 
 
-interact(plot, ilev=(0, 30))
+interact(plot, ilev=(0, 20))
 
 # %% [markdown]
 # ## Vertical alignment of precip and OLR
