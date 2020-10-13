@@ -52,15 +52,26 @@ ds
 # We need to define the center of the eye. Let's try minimum central pressure.
 
 # %%
-psfc_min = ds.psfc.isel(
-    ds.psfc.argmin(dim=["lat", "lon"])
-)  # gridpt-wise min (could interpolate tho?)
+psfc_min = ds.psfc.isel(ds.psfc.argmin(dim=["lat", "lon"]))  # gridpt-wise min
 psfc_min
+
+# %%
+# corresponding indices: ilat, ilon
+np.where(ds.lat.values == psfc_min.lat.values)[0][0], np.where(
+    ds.lon.values == psfc_min.lon.values
+)[0][0]
+# ^ probably there is a better way to do this?...
+
+# %% [markdown]
+# Let's compare this to the central indices, which is what George was telling them to use in class. Our grid is 300x300, both even, so we can't actually get a central point: but we can average the two sets of equally central points.
+
+# %%
+loc_min_by_inds = ds.lon[[149, 150]].values.mean(), ds.lat[[149, 150]].values.mean()
+loc_min_by_inds
 
 # %%
 fig, ax = plt.subplots()
 ds.psfc.plot(ax=ax)
-
 ax.plot(
     psfc_min.lon,
     psfc_min.lat,
@@ -69,6 +80,70 @@ ax.plot(
     label=(
         f"min psfc\nvalue = {psfc_min.values:.0f} hPa\n"
         f"coords = ({psfc_min.lat.values:.5g}{ds.lat.units}, {psfc_min.lon.values:.5g}{ds.lon.units})"
+    ),
+)
+
+ax.legend()
+
+# %% [markdown]
+# Let's zoom in more and compare to the index-wise one.
+
+# %%
+fig, ax = plt.subplots(figsize=(8, 6))
+
+psfc_zoom = ds.psfc.isel(lat=slice(119, 180), lon=slice(119, 180))
+
+psfc_zoom.plot(ax=ax)
+
+cs = psfc_zoom.plot.contour(levels=20, colors="0.5", linewidths=1, ax=ax)
+
+icontour = 8
+Xci = cs.allsegs[icontour][0]
+ax.plot(*Xci.T, c="orange", lw=2, label=f"selected contour\nlevel = {cs.levels[icontour]}")
+
+
+def center_of_mass(X):
+    # calculate center of mass of a closed polygon; https://stackoverflow.com/a/48172492
+    x = X[:, 0]
+    y = X[:, 1]
+    g = x[:-1] * y[1:] - x[1:] * y[:-1]
+    A = 0.5 * g.sum()
+    cx = ((x[:-1] + x[1:]) * g).sum()
+    cy = ((y[:-1] + y[1:]) * g).sum()
+    return 1.0 / (6 * A) * np.array([cx, cy])
+
+
+xcm_ci = center_of_mass(Xci)
+
+ax.plot(
+    *xcm_ci,
+    "*",
+    c="orange",
+    ms=14,
+    label=(
+        "Centroid of selected contour\n"
+        f"coords = ({xcm_ci[1]:.5g}{ds.lat.units}, {xcm_ci[0]:.5g}{ds.lon.units})"
+    ),
+)
+
+ax.plot(
+    psfc_min.lon,
+    psfc_min.lat,
+    "r*",
+    ms=14,
+    label=(
+        f"min psfc on the grid\nvalue = {psfc_min.values:.0f} hPa\n"
+        f"coords = ({psfc_min.lat.values:.5g}{ds.lat.units}, {psfc_min.lon.values:.5g}{ds.lon.units})"
+    ),
+)
+
+ax.plot(
+    *loc_min_by_inds,
+    "m*",
+    ms=14,
+    label=(
+        "Average of the index-wise central lat/lons\n"
+        f"coords = ({loc_min_by_inds[1]:.5g}{ds.lat.units}, {loc_min_by_inds[0]:.5g}{ds.lon.units})"
     ),
 )
 
