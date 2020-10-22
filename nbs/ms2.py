@@ -191,6 +191,8 @@ theta[~is_center] = np.arctan2(Y[~is_center], X[~is_center])
 # vtan = uh*np.sin(theta_wind - theta)  # tangential wind
 
 # from Kelly, fewer steps way
+# note that cos(theta) is equivalent to x/r and sin(theta) to y/r,
+# so we could've gotten away with not calculating theta at all
 vtan = np.cos(theta) * ds.v - np.sin(theta) * ds.u
 urad = -(np.cos(theta) * ds.u + np.sin(theta) * ds.v)
 
