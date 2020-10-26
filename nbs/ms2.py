@@ -195,6 +195,8 @@ theta[~is_center] = np.arctan2(Y[~is_center], X[~is_center])
 # so we could've gotten away with not calculating theta at all
 vtan = np.cos(theta) * ds.v - np.sin(theta) * ds.u
 urad = -(np.cos(theta) * ds.u + np.sin(theta) * ds.v)
+# note also that if we already had u_h, we only really need to calculate one,
+# then we can use Pythag with u_h to get the other one
 
 # add radial and tangential velocity to the dataset
 ds["urad"] = urad
@@ -250,6 +252,12 @@ def vxs_radial_ds_groupby(ds, rbins=rbins):
 
     return ds_r
 
+
+# %%
+# bit of a check
+fig, [ax1, ax2] = plt.subplots(2, 1, figsize=(5, 7), sharex=True)
+ds.urad.isel(hgt=0).plot.pcolormesh(ax=ax1)
+ds.vtan.isel(hgt=0).plot.pcolormesh(ax=ax2)
 
 # %% [markdown]
 # Compare the times?
