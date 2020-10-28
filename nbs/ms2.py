@@ -18,6 +18,7 @@ import sys
 
 sys.path.append("../")
 
+import matplotlib.colors as colors
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
@@ -347,5 +348,48 @@ interact(plot, ilev=(0, 22))
 # %% [markdown]
 # > Use vertically stacked subplots to compare location of precipitation (surface QRAIN and composite QRAIN) and OLR.
 
+# %% [markdown]
+# ### lat/lon
+
 # %%
-# TODO
+fig, axs = plt.subplots(3, 1, figsize=(5, 9), sharex=True)
+
+for ax, vn in zip(axs.flat, ["olr", "qrain_cmp", "qrain_sfc"]):
+    cmap = "binary" if vn == "olr" else "ocean"
+    norm = colors.LogNorm(vmin=1e-11, vmax=1e-2) if vn[:5] == "qrain" else None
+    ds[vn].plot(ax=ax, cmap=cmap, norm=norm)
+    if ax is not axs[-1]:
+        ax.set_xlabel("")
+
+# %% [markdown]
+# ### Radial profile
+
+# %%
+radial_prof(ds["olr"], rbins)
+
+# %%
+fig, ax1 = plt.subplots(figsize=(9, 5))
+
+ax2 = ax1.twinx()
+
+cs = ["red", "blue", "green"]
+
+# mark left y-ax as OLR
+ax1.yaxis.label.set_color(cs[0])
+ax1.tick_params(axis="y", colors=cs[0])
+ax2.spines["left"].set(color=cs[0])
+
+for c, vn in zip(cs, ["olr", "qrain_cmp", "qrain_sfc"]):
+    ax = ax1 if vn == "olr" else ax2
+    da = radial_prof(ds[vn], rbins)
+    ax.fill_between(da.r, da[f"{vn}_q"].isel(q=0), da[f"{vn}_q"].isel(q=-1), color=c, alpha=0.2)
+    # da[f"{vn}_q"].sel(q=0.5).plot(ax=ax, color=c, label=vn, alpha=0.5)
+    # ^ plotting the median too makes it a bit messy
+
+# fix labels
+ax1.set_title("")
+ax2.set_title("")
+ax1.set_ylabel(f"OLR [{ds.olr.units}]")
+ax2.set_ylabel(f"Rain water mixing ratio [{ds.qrain.units}]")
+ax1.set_xlim(xmin=0, xmax=da.r[-1])
+ax2.legend(["Composite", "Surface"])
