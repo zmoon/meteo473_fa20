@@ -40,6 +40,58 @@ ds = xr.open_dataset("../data/data.nc")
 ds
 
 # %% [markdown]
+# ## Surface temp. vs pot. temp.
+
+# %% [markdown]
+# We can compute surface air temperature from the potential temperature since we have the surface pressure. We assume that the reference pressure $p_0$ is 1000 hPa.
+# $$
+# \theta = T \left(\frac{p}{p_0}\right)^{-\kappa} \to T = \theta \left(\frac{p}{p_0}\right)^{+\kappa}
+# $$
+# where $\kappa = R/c_p \approx 0.286$ for dry air.
+#
+# ❗ Note that we would really want to have pressure of the first level! Our first level may not be fully consistent with the surface in the original simulation that the surface pressure corresponds to.
+
+# %%
+p_0 = 1000 * 100  # Pa
+p = ds.psfc
+theta0 = ds.theta.isel(hgt=0)
+
+ds["ta_sfc"] = theta0 * (p / p_0) ** 0.286
+ds.ta_sfc.attrs.update({"units": ds.theta.units, "long_name": "Surface air temperature"})
+
+assert np.allclose(
+    theta0.values, (ds.ta_sfc * (p / p_0) ** (-0.286)).values
+), "Should be able to recover potential temperature at first level"
+# ^ `xarray.testing.assert_allclose` didn't work for some reason, maybe the attrs
+
+fig, [ax1, ax2, ax3] = plt.subplots(1, 3, sharex=True, sharey=True, figsize=(9, 4.5))
+
+cbar_kwargs = dict(orientation="horizontal")
+
+ds.ta_sfc.plot(ax=ax1, cbar_kwargs=cbar_kwargs)
+ax1.set(title=r"$T_{a, \mathrm{sfc}}$")
+
+theta0.plot(ax=ax2, cbar_kwargs=cbar_kwargs)
+ax2.set(ylabel="", title=r"$\theta_0$ (lowest height level)")
+
+(ds.ta_sfc - theta0).plot(
+    ax=ax3, cbar_kwargs=dict(orientation="horizontal", label="Temperature difference\n[°C] or [K]")
+)
+ax3.set(ylabel="", title=r"$T_{a, \mathrm{sfc}} - \theta_0$")
+
+# %% [markdown]
+# 👆 In the vicinity of the eye, the potential temperature is high because it is warm but the pressure is low due to the cyclone. We see that actual temperature is also higher in that region, but the difference wrt. the surrounding environment is less striking.
+
+# %% [markdown]
+# ## Maps
+
+# %% [markdown]
+# > Map surface pressure, surface temperature, surface water vapor mixing ratio, surface wind speed, surface sensible heat flux, surface latent heat flux, precipitation, and PBL height.
+
+# %%
+# TODO: ?
+
+# %% [markdown]
 # ## Scatter plots
 #
 # Examining relationships using scatter plots and linear fits.
@@ -116,6 +168,8 @@ plot_linear_fit("lh", "uh", ax=ax2)
 # %%
 # TODO: compute relative humidity??
 
+# TODO: compute actual surface temperature using pot. T and surface pressure
+
 fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(8.5, 3.8))
 
 plot_linear_fit("theta", "pblh", ax=ax1)
@@ -127,7 +181,7 @@ plot_linear_fit("qvapor", "pblh", ax=ax2)
 #
 # > Compare precipitation and spatial patterns in PBL height, surface temperature and surface mixing ratio to determine the origin of the weird patterns in the latter two variables.  Do this either with side by side subplots of precipitation and the other variables or by overlaying two variables on one plot using contour over pcolormesh.
 #
-# Note that `qrain_sfc` is *not* equivalent to `qrain` at the lowest level. About 1/2 of the points are the same though.
+# Note that `qrain_sfc` is *not* equivalent to `qrain` at the lowest level (though after the correction they are much more similar).
 #
 # Recall that what we are plotting for surface precip. is really rain water mixing ratio at the surface.
 
@@ -157,6 +211,8 @@ for vn, ax in zip(["pblh", "theta", "qvapor"], axs.flat):
 # ## Linear model of surface sensible heat flux
 #
 # > In theory, the surface sensible heat flux can be computed using the formula: HFX = C*WindSpeed*(SST-Tsfc), where C is constant. Plot HFX vs WindSpeed*(SST-Tsfc) to see how well this theory holds in a typhoon.  Use linear regression to estimate the value of C.
+#
+# The constant C should encompass $\rho \, c_p$.
 
 # %%
 # TODO: could do this earlier
