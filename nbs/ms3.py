@@ -86,7 +86,7 @@ ax3.set(ylabel="", title=r"$T_{a, \mathrm{sfc}} - \theta_0$")
 # Also add (horizontal) wind speed.
 
 # %%
-# first compute wind speed
+# also compute wind speed
 ds["uh"] = np.sqrt(ds.u ** 2 + ds.v ** 2)
 ds.uh.attrs.update({"long_name": "Horizontal wind speed", "units": ds.u.units})
 
@@ -199,7 +199,7 @@ plot_linear_fit("lh", "uh", ax=ax2)
 
 fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(8.5, 3.8))
 
-plot_linear_fit("theta", "pblh", ax=ax1)
+plot_linear_fit("ta_sfc", "pblh", ax=ax1)
 
 plot_linear_fit("qvapor", "pblh", ax=ax2)
 
@@ -225,7 +225,7 @@ im = ds.qrain_sfc.plot(
 # %%
 fig, axs = plt.subplots(3, 1, figsize=(4.7, 8.5), sharex=True, sharey=True)
 
-for vn, ax in zip(["pblh", "theta", "qvapor"], axs.flat):
+for vn, ax in zip(["pblh", "ta_sfc", "qvapor"], axs.flat):
     ds_sfc[vn].plot(ax=ax)
     # plot a few precip contours
     ds_sfc.qrain_sfc.plot.contour(ax=ax, levels=[1e-4], colors=["0.8"], linewidths=0.5)
@@ -245,7 +245,8 @@ for vn, ax in zip(["pblh", "theta", "qvapor"], axs.flat):
 # TODO: could do this earlier
 df = ds.isel(hgt=0).to_dataframe()
 
-df["delta_t"] = df["sst"] - df["theta"]
+df["delta_t"] = df["sst"] - df["ta_sfc"]
+# TODO: revise discussion since results are much better with ta_sfc than with theta0...
 
 
 def fit_hfx_formula_and_plot(formula, *, print_summary=True, limits="max"):
@@ -290,7 +291,7 @@ fit_hfx_formula_and_plot("hfx ~ uh : delta_t", print_summary=False)  # intercept
 # ($\times \, U_h$) in a multiple linear regression.
 
 # %%
-fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + theta) -1")
+fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + ta_sfc) -1")
 # this time is only a bit better without intercept (0.042 increase)
 
 # %% [markdown]
@@ -300,13 +301,13 @@ fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + theta) -1")
 # multiplication with $U_h$.
 
 # %%
-fit_hfx_formula_and_plot("hfx ~ uh * (delta_t + sst + theta) -1")
+fit_hfx_formula_and_plot("hfx ~ uh * (delta_t + sst + ta_sfc) -1")
 # 0.061 increase in R^2 without intercept
 # scatters look identical tho, just different y values
 
 # %%
 fit_hfx_formula_and_plot(
-    "hfx ~ uh * (delta_t + sst + theta)", print_summary=False
+    "hfx ~ uh * (delta_t + sst + ta_sfc)", print_summary=False
 )  # intercept included
 
 # %% [markdown]
