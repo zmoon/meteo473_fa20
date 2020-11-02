@@ -83,13 +83,44 @@ ax3.set(ylabel="", title=r"$T_{a, \mathrm{sfc}} - \theta_0$")
 # 👆 In the vicinity of the eye, the potential temperature is high because it is warm but the pressure is low due to the cyclone. We see that actual temperature is also higher in that region, but the difference wrt. the surrounding environment is less striking.
 
 # %% [markdown]
+# Also add (horizontal) wind speed.
+
+# %%
+# first compute wind speed
+ds["uh"] = np.sqrt(ds.u ** 2 + ds.v ** 2)
+ds.uh.attrs.update({"long_name": "Horizontal wind speed", "units": ds.u.units})
+
+# %% [markdown]
 # ## Maps
 
 # %% [markdown]
 # > Map surface pressure, surface temperature, surface water vapor mixing ratio, surface wind speed, surface sensible heat flux, surface latent heat flux, precipitation, and PBL height.
 
 # %%
-# TODO: ?
+to_plot = ["psfc", "ta_sfc", "sst", "qvapor", "qrain_sfc", "pblh", "uh", "hfx", "lh"]
+
+cbar_kwargs = dict(orientation="horizontal")
+
+fig, axs = plt.subplots(3, 3, sharex=True, sharey=True, figsize=(9, 11))
+
+for vn, ax in zip(to_plot, axs.flat):
+    da = ds[vn]
+
+    if vn in ["sst"]:
+        da = da.where(ds.landmask == 0)
+
+    if vn == "qrain_sfc":
+        norm = mpl.colors.LogNorm(vmin=1e-8, vmax=1e-2)
+    else:
+        norm = None
+
+    kwargs = dict(cbar_kwargs=cbar_kwargs, norm=norm)
+
+    if "hgt" in da.coords:  # 3-d
+        da.isel(hgt=0).plot(ax=ax, **kwargs)
+        ax.set(title="")
+    else:  # 2-d
+        da.plot(ax=ax, **kwargs)
 
 # %% [markdown]
 # ## Scatter plots
@@ -108,10 +139,6 @@ ax3.set(ylabel="", title=r"$T_{a, \mathrm{sfc}} - \theta_0$")
 # `hfx` and `lh` are surface variables, but the wind speed is not.
 
 # %%
-# first compute wind speed
-ds["uh"] = np.sqrt(ds.u ** 2 + ds.v ** 2)
-ds.uh.attrs.update({"long_name": "Horizontal wind speed", "units": ds.u.units})
-
 ds_sfc = ds.isel(hgt=0)
 
 
