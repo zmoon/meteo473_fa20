@@ -14,16 +14,17 @@
 #     name: python3
 # ---
 # %%
+from functools import partial
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+from ipywidgets import interact
 from utils import add121
 
 # import statsmodels.api as sm
 # import statsmodels.formula.api as smf
-
-# from ipywidgets import interact
 
 # %matplotlib widget
 
@@ -41,7 +42,9 @@ ds = xr.open_dataset("../data/data.nc")
 ds
 
 # %% [markdown]
-# ## Vertical velocity associated with convection
+# ## Vertical velocity maps
+#
+# Vertical velocity associated with convection
 
 # %% [markdown]
 # > Use pcolormesh to generate maps of vertical velocity. Create one map every 1000 geopotential meters from 1000 up to 29000.  Use these maps to inform and illustrate your answers to the following questions. [10 pts]
@@ -49,6 +52,35 @@ ds
 # > * How high does the convection go (in kilometers).  [5 pts]
 # > * Across what range of altitudes (in kilometers) can you pick out the gravity waves?  [5pts]
 # > * What shape are the gravity wave patterns on these maps and does this shape evolve with height? If so, how? [5pts]
+
+# %% [markdown]
+# We can build an interactive selector like we have done before.
+
+# %%
+fig = plt.figure(figsize=(8, 6))
+
+
+def plot_w_hgt(hgt=17000, symlog=False, symlog_linthresh=1.0, contourf=False, nlevs=60):
+    da = ds.w.sel(hgt=hgt)
+    fig.clf()
+    ax = plt.axes()
+    norm = None if not symlog else mpl.colors.SymLogNorm(linthresh=symlog_linthresh, base=10)
+    fn = da.plot if not contourf else partial(da.plot.contourf, levels=nlevs)
+    # note nlevs doesn't seem to work properly with SymLogNorm (actual # of levels come out less)
+    fn(ax=ax, norm=norm)
+
+
+interact(plot_w_hgt, hgt=(1000, 29000, 500), symlog_linthresh=(0.1, 2.0, 0.05), nlevs=(2, 200, 1))
+
+# %% [markdown]
+# Vertical cross-sections could help us see this in one figure, albeit for a limited part of the domain. That's kind of what we are doing in the next part though.
+
+# %%
+is_hgt_range = (ds.hgt >= 1000) & (ds.hgt <= 29000)
+
+# recall 144 is the latitude of the gridpt-wise min in surface pressure
+# from `ds.psfc.argmin(dim=["lat", "lon"])`
+ds.w.isel(lat=144, hgt=is_hgt_range).plot.contourf(levels=60, size=5, aspect=1.8)
 
 # %% [markdown]
 # ## Convective gravity waves
