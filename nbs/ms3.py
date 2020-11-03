@@ -221,16 +221,24 @@ im = ds.qrain_sfc.plot(
 )
 
 # %%
-fig, axs = plt.subplots(3, 1, figsize=(4.7, 8.5), sharex=True, sharey=True)
+fig, axs = plt.subplots(3, 1, figsize=(6, 10.8), sharex=True, sharey=True)
 
-for vn, ax in zip(["pblh", "ta_sfc", "qvapor"], axs.flat):
-    ds_sfc[vn].plot(ax=ax)
-    # plot a few precip contours
-    ds_sfc.qrain_sfc.plot.contour(ax=ax, levels=[1e-4], colors=["0.8"], linewidths=0.5)
-    # remove labels we don't need that xarray added
+cmaps = ["binary_r", "gnuplot", "Blues"]
+
+for vn, ax, cmap in zip(["pblh", "ta_sfc", "qvapor"], axs.flat, cmaps):
+    # Plot map
+    ds_sfc[vn].plot.contourf(levels=30, ax=ax, cmap=cmap, alpha=0.5, antialiased=True)
+
+    # Plot precip contour
+    ds_sfc.qrain_sfc.plot.contour(ax=ax, levels=[1e-4], colors=["#adff2f"], linewidths=0.5)
+
+    # Remove labels we don't need that xarray added
     ax.set_title("")
     if ax != axs.flat[-1]:
         ax.set_xlabel("")
+
+# %% [markdown]
+# 👆 Precip seems to be spatially collocated with areas of lower PBL depth and lower SST. Possibly also low near-surface water vapor mixing ratio, but it is harder to tell with that one.
 
 # %% [markdown]
 # ## Linear model of surface sensible heat flux
