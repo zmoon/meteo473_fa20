@@ -195,8 +195,6 @@ plot_linear_fit("lh", "uh", ax=ax2)
 # %%
 # TODO: compute relative humidity??
 
-# TODO: compute actual surface temperature using pot. T and surface pressure
-
 fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(8.5, 3.8))
 
 plot_linear_fit("ta_sfc", "pblh", ax=ax1)
@@ -239,14 +237,13 @@ for vn, ax in zip(["pblh", "ta_sfc", "qvapor"], axs.flat):
 #
 # > In theory, the surface sensible heat flux can be computed using the formula: HFX = C*WindSpeed*(SST-Tsfc), where C is constant. Plot HFX vs WindSpeed*(SST-Tsfc) to see how well this theory holds in a typhoon.  Use linear regression to estimate the value of C.
 #
-# The constant C should encompass $\rho \, c_p$.
+# The constant C should encompass something about $\rho_a \, c_{p,a}$...
 
 # %%
 # TODO: could do this earlier
 df = ds.isel(hgt=0).to_dataframe()
 
 df["delta_t"] = df["sst"] - df["ta_sfc"]
-# TODO: revise discussion since results are much better with ta_sfc than with theta0...
 
 
 def fit_hfx_formula_and_plot(formula, *, print_summary=True, limits="max"):
@@ -285,30 +282,29 @@ fit_hfx_formula_and_plot("hfx ~ uh : delta_t -1")
 fit_hfx_formula_and_plot("hfx ~ uh : delta_t", print_summary=False)  # intercept included
 
 # %% [markdown]
-# 👆 With intercept included, the computer $R^2$ value is much lower. The scatter looks identical (with auto plot settings, not square), except that the range of $y$ values is different.
+# 👆 With intercept included, the computer $R^2$ value is slightly better. And by eye we can see that the points lie more so along the <span style='color: gray;'>grey</span> 1-to-1 line.
 #
-# A much better model (it seems) includes $\delta T$ as well as the individual temperature terms
-# ($\times \, U_h$) in a multiple linear regression.
+# Including $\delta T$ as well as the individual temperature terms
+# ($\times \, U_h$) in a multiple linear regression can give us slightly better fit (as good as the original result with intercept added, but here with no intercept included).
 
 # %%
-fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + ta_sfc) -1")
+fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + ta_sfc) -1", print_summary=False)
 # this time is only a bit better without intercept (0.042 increase)
 
 # %% [markdown]
 # 👆 We can see that there is a pretty strong linear relationship between the predicted and actual `hfx`. However, the values are underpredicted on average.
 #
-# Even better if the individual temperature terms are included as well, in addition to their
+# We get another slight improvement if the individual temperature terms are included as well, in addition to their
 # multiplication with $U_h$.
 
 # %%
 fit_hfx_formula_and_plot("hfx ~ uh * (delta_t + sst + ta_sfc) -1")
-# 0.061 increase in R^2 without intercept
-# scatters look identical tho, just different y values
+# ^ including all interaction terms
+# TODO: term importance? (need to standardize the variables before fit)
 
 # %%
-fit_hfx_formula_and_plot(
-    "hfx ~ uh * (delta_t + sst + ta_sfc)", print_summary=False
-)  # intercept included
+fit_hfx_formula_and_plot("hfx ~ uh * (delta_t + sst + ta_sfc)", print_summary=False)
+# ^ intercept included
 
 # %% [markdown]
 # 👆 We noticed that---according to `statsmodels`---the $R^2$ values are better (closer to 1) when an intercept is not included in the model. This seems to be because `statsmodels` uses the uncentered $R^2$ formula in this case. The scatter looks essentially identical in both cases; unlike the first, simplest model, there is not a discernible difference in the range of $y$ values, although we can see that the coefficients have changed.
