@@ -20,6 +20,7 @@ import numpy as np
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import xarray as xr
+from scipy import stats
 from utils import add121
 
 # from ipywidgets import interact
@@ -248,6 +249,50 @@ for vn, ax, cmap in zip(["pblh", "ta_sfc", "qvapor"], axs.flat, cmaps):
 # The constant C should encompass something about $\rho_a \, c_{p,a}$...
 
 # %%
+fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(7, 3.3))
+
+ax1.scatter(ds.hfx, ds_sfc.uh * (ds.sst - ds.ta_sfc), marker=".")
+ax1.set_ylabel(r"$U_h \, (\mathrm{SST} - T_{a,\mathrm{sfc}})$")
+
+ax2.scatter(ds.hfx, ds_sfc.uh * (ds.sst - ds_sfc.theta), marker=".")
+ax2.set_ylabel(r"$U_h \, (\mathrm{SST} - \theta_{a,\mathrm{lev0}})$")
+
+for ax in fig.get_axes():
+    ax.set_xlabel("HFX [W m$^{-2}$]")
+
+# %% [markdown]
+# 👆 We can see that there is a strong linear relationship between $U_h \, (\mathrm{SST} - T_{a,\mathrm{sfc}})$ and the true HFX. Furthermore we can see that the model sans constant produces values smaller than the true HFX, indicating that C will be $> 1$. In the right plot, we see that using $\theta$ at the lowest height level instead of the computed surface air temperature produces much less of a linear relationship to HFX.
+
+# %%
+# the students are supposed to use scipy.stats.linregress
+# note it includes an intercept by default!
+# let's just check what it gives
+
+x = (ds_sfc.uh * (ds.sst - ds.ta_sfc)).values.flatten()
+y = ds.hfx.values.flatten()
+
+res_xy = stats.linregress(x, y)
+res_yx = stats.linregress(y, x)
+
+print(res_xy)
+print(res_yx)
+print(f"1/res_xy.slope: {1/res_xy.slope}")
+
+# %% [markdown]
+# 👆 Note that the slope we get with $x$ and $y$ switched is not exactly the inverse of the slope with $x$ and $y$ in the correct position, although the $r^2$ values are identical. This is partially due to the inclusion of the intercept.
+
+# %%
+res2_xy = np.linalg.lstsq(x[:, np.newaxis], y, rcond=None)[0]
+res2_yx = np.linalg.lstsq(y[:, np.newaxis], x, rcond=None)[0]
+
+print(res2_xy)
+print(res2_yx)
+print(f"1/res2_xy.slope: {1/res2_xy[0]}")
+
+# %% [markdown]
+# 👆 With no intercept (line passing through (0,0)), the inverted $x$-vs-$y$ slope is closer to the $y$-vs-$x$ slope now, but not the same. It would be exactly the same if $r^2$ were 1.0.
+
+# %%
 # TODO: could do this earlier
 df = ds.isel(hgt=0).to_dataframe()
 
@@ -290,7 +335,9 @@ fit_hfx_formula_and_plot("hfx ~ uh : delta_t -1")
 fit_hfx_formula_and_plot("hfx ~ uh : delta_t", print_summary=False)  # intercept included
 
 # %% [markdown]
-# 👆 With intercept included, the computer $R^2$ value is slightly better. And by eye we can see that the points lie more so along the <span style='color: gray;'>grey</span> 1-to-1 line.
+# 👆 With intercept included, the computed $R^2$ value is slightly better. And by eye we can see that the points lie more so along the <span style='color: gray;'>grey</span> 1-to-1 line with the higher C value (1.484 vs 1.338) that we get with the linear model that includes intercept.
+#
+# Most of the spread we see is in the region of lower sensible heat flux: the region of smaller wind speeds and/or smaller SST$-T_{a,\mathrm{sfc}}$. This is likely due to the numerical model (WRF) using a different parameterization for these conditions, with different coefficients.
 #
 # Including $\delta T$ as well as the individual temperature terms
 # ($\times \, U_h$) in a multiple linear regression can give us slightly better fit (as good as the original result with intercept added, but here with no intercept included).
