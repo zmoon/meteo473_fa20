@@ -23,8 +23,6 @@ import xarray as xr
 from scipy import stats
 from utils import add121
 
-# from ipywidgets import interact
-
 # %matplotlib widget
 
 plt.rcParams.update(
@@ -34,7 +32,7 @@ plt.rcParams.update(
 )
 
 # %% [markdown]
-# Load the data.
+# ## Load the data
 
 # %%
 ds = xr.open_dataset("../data/data.nc")
@@ -62,7 +60,7 @@ ds.ta_sfc.attrs.update({"units": ds.theta.units, "long_name": "Surface air tempe
 
 assert np.allclose(
     theta0.values, (ds.ta_sfc * (p / p_0) ** (-0.286)).values
-), "Should be able to recover potential temperature at first level"
+), "Should be able to recover potential temperature at first level by inverting"
 # ^ `xarray.testing.assert_allclose` didn't work for some reason, maybe the attrs
 
 fig, [ax1, ax2, ax3] = plt.subplots(1, 3, sharex=True, sharey=True, figsize=(9, 4.5))
@@ -203,7 +201,7 @@ plot_linear_fit("ta_sfc", "pblh", ax=ax1)
 plot_linear_fit("qvapor", "pblh", ax=ax2)
 
 # %% [markdown]
-# ## Surface precip. -- spatial relationships
+# ## Surface precip. – spatial relationships
 #
 # > Compare precipitation and spatial patterns in PBL height, surface temperature and surface mixing ratio to determine the origin of the weird patterns in the latter two variables.  Do this either with side by side subplots of precipitation and the other variables or by overlaying two variables on one plot using contour over pcolormesh.
 #
@@ -248,6 +246,9 @@ for vn, ax, cmap in zip(["pblh", "ta_sfc", "qvapor"], axs.flat, cmaps):
 #
 # The constant C should encompass something about $\rho_a \, c_{p,a}$...
 
+# %% [markdown]
+# ### Initial plot
+
 # %%
 fig, [ax1, ax2] = plt.subplots(1, 2, figsize=(7, 3.3))
 
@@ -262,6 +263,9 @@ for ax in fig.get_axes():
 
 # %% [markdown]
 # 👆 We can see that there is a strong linear relationship between $U_h \, (\mathrm{SST} - T_{a,\mathrm{sfc}})$ and the true HFX. Furthermore we can see that the model sans constant produces values smaller than the true HFX, indicating that C will be $> 1$. In the right plot, we see that using $\theta$ at the lowest height level instead of the computed surface air temperature produces much less of a linear relationship to HFX.
+
+# %% [markdown]
+# ### Intercept or no
 
 # %%
 # the students are supposed to use scipy.stats.linregress
@@ -291,6 +295,9 @@ print(f"1/res2_xy.slope: {1/res2_xy[0]}")
 
 # %% [markdown]
 # 👆 With no intercept (line passing through (0,0)), the inverted $x$-vs-$y$ slope is closer to the $y$-vs-$x$ slope now, but not the same. It would be exactly the same if $r^2$ were 1.0.
+
+# %% [markdown]
+# ### Various linear models
 
 # %%
 # TODO: could do this earlier
@@ -322,7 +329,7 @@ def fit_hfx_formula_and_plot(formula, *, print_summary=True, limits="max"):
     ax.text(1.05, 0.9, f"hfx = {p_str}", ha="left", va="top", transform=ax.transAxes, fontsize=10)
 
     # show R^2
-    ax.text(0.02, 0.98, f"$R^2 = {res.rsquared:.3f}$", va="top", ha="left", transform=ax.transAxes)
+    ax.text(0.02, 0.98, f"$R^2 = {res.rsquared:.3g}$", va="top", ha="left", transform=ax.transAxes)
 
 
 # `-1` - don't use intercept (constant term) in the model (the directions suggest that we shouldn't include one)
@@ -339,6 +346,21 @@ fit_hfx_formula_and_plot("hfx ~ uh : delta_t", print_summary=False)  # intercept
 #
 # Most of the spread we see is in the region of lower sensible heat flux: the region of smaller wind speeds and/or smaller SST$-T_{a,\mathrm{sfc}}$. This is likely due to the numerical model (WRF) using a different parameterization for these conditions, with different coefficients.
 #
+# Note that for the model without intercept, statsmodels gives us an *uncentered* $R^2$. What do we get if we use the normal formula for $r^2$?
+
+# %%
+# using x and y defined above for the np.linalg.lstsq
+yhat = res2_xy[0] * x
+ybar = y.mean()
+
+SStot = np.sum((y - ybar) ** 2)
+SSres = np.sum((y - yhat) ** 2)
+
+print(f"r^2 = {np.sqrt(1 - SSres/SStot)}")
+
+# %% [markdown]
+# 👆 Seems that our manual $r^2$ computation is pretty consistent with the statsmodels generalized uncentered $R^2$, though different at the fourth decimal place.
+#
 # Including $\delta T$ as well as the individual temperature terms
 # ($\times \, U_h$) in a multiple linear regression can give us slightly better fit (as good as the original result with intercept added, but here with no intercept included).
 
@@ -347,8 +369,6 @@ fit_hfx_formula_and_plot("hfx ~ uh : (delta_t + sst + ta_sfc) -1", print_summary
 # this time is only a bit better without intercept (0.042 increase)
 
 # %% [markdown]
-# 👆 We can see that there is a pretty strong linear relationship between the predicted and actual `hfx`. However, the values are underpredicted on average.
-#
 # We get another slight improvement if the individual temperature terms are included as well, in addition to their
 # multiplication with $U_h$.
 
