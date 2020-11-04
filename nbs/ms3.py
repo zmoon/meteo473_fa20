@@ -382,4 +382,4 @@ fit_hfx_formula_and_plot("hfx ~ uh * (delta_t + sst + ta_sfc)", print_summary=Fa
 # ^ intercept included
 
 # %% [markdown]
-# 👆 We noticed that---according to `statsmodels`---the $R^2$ values are better (closer to 1) when an intercept is not included in the model. This seems to be because `statsmodels` uses the uncentered $R^2$ formula in this case. The scatter looks essentially identical in both cases; unlike the first, simplest model, there is not a discernible difference in the range of $y$ values, although we can see that the coefficients have changed.
+# 👆 Unlike our simple linear regression, here including an intercept in the linear model makes the $R^2$ slightly worse.
