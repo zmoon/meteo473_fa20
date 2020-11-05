@@ -230,3 +230,31 @@ for ax in [ax1, ax1_2, ax2]:
 
 # %% [markdown]
 # 👆 We see that in the real data, the central $x$ values shift to the west as you move from south to north. If we change how we center the data to account for this, we can see the slight distortion due to the changing in grid cell size (from 3.44 to 3.34 km moving from south to north). Constant grid spacing of 3 km is a bit too small, we can see, but 3.4 km looks nice.
+
+# %% [markdown]
+# ## Add x/y as 2-d coordinates
+#
+# As we saw, since our data are on a lat/lon grid (and an unequal one at that), the $x$ and $y$ values will vary in both dimensions.
+#
+# We can add `X` and `Y` computed above as coordinates to our `ds`.
+
+# %%
+ds = ds.assign_coords(
+    {
+        "xs": (("lat", "lon"), X, {"long_name": "$x$ on Earth sphere", "units": "m"}),
+        "ys": (("lat", "lon"), Y, {"long_name": "$y$ on Earth sphere", "units": "m"}),
+    }
+)
+
+ds
+
+# %%
+ds.olr.plot(x="xs", y="ys", size=4)
+
+# %% [markdown]
+# 👆 We see that we get the same tilt in the plot that we saw in the comparison above.
+#
+# 👇 This is consistent with the $x$ positions on the sphere changing in both the lat and lon directions.
+
+# %%
+ds.xs.plot(size=3)
