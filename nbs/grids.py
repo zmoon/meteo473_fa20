@@ -18,6 +18,7 @@ import sys
 
 sys.path.append("../")
 
+import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
@@ -249,7 +250,7 @@ ds = ds.assign_coords(
 ds
 
 # %%
-ds.olr.plot(x="xs", y="ys", size=4)
+ds.hfx.plot(x="xs", y="ys", size=4)
 
 # %% [markdown]
 # 👆 We see that we get the same tilt in the plot that we saw in the comparison above.
@@ -258,3 +259,42 @@ ds.olr.plot(x="xs", y="ys", size=4)
 
 # %%
 ds.xs.plot(size=3)
+
+# %% [markdown]
+# ## Map projections
+#
+# We can use Cartopy to get a sense of the scale of our data domain and its position on the globe.
+
+# %%
+proj = ccrs.Robinson()
+
+fig, ax = plt.subplots(figsize=(9, 6), subplot_kw={"projection": proj})
+ax.coastlines()
+ax.set_extent([0, 180, 0, 90])
+ax.gridlines(draw_labels=True)
+
+p = ds.hfx.plot(
+    x="lon",
+    y="lat",
+    transform=ccrs.PlateCarree(),  # the data's projection
+    ax=ax,
+    cbar_kwargs=dict(orientation="horizontal", shrink=0.5, pad=0.07),
+)
+
+# %% [markdown]
+# In projections with rectangular lat/lon cells, the domain looks square again (like it does in lat/lon space). Note that the `x="lon", y="lat"` we used above is not necessary here.
+#
+# For example:
+
+# %%
+proj = ccrs.Mercator()
+
+fig, ax = plt.subplots(figsize=(5, 5), subplot_kw={"projection": proj})
+ax.coastlines()
+ax.gridlines(draw_labels=True)
+
+p = ds.hfx.plot(
+    transform=ccrs.PlateCarree(),  # the data's projection
+    ax=ax,
+    cbar_kwargs=dict(orientation="horizontal", shrink=0.5, pad=0.07),
+)

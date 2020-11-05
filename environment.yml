@@ -22,6 +22,7 @@ dependencies:
   # analysis, scientific tools
   - xarray
   - matplotlib
+  - cartopy
   - scipy
   - statsmodels
   # - xesmf
