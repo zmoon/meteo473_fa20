@@ -225,14 +225,26 @@ im = ds.qrain_sfc.plot(
 # %%
 fig, axs = plt.subplots(3, 1, figsize=(6, 10.8), sharex=True, sharey=True)
 
+bright_green = "#adff2f"
 cmaps = ["binary_r", "gnuplot", "Blues"]
 
 for vn, ax, cmap in zip(["pblh", "ta_sfc", "qvapor"], axs.flat, cmaps):
     # Plot map
     ds_sfc[vn].plot.contourf(levels=30, ax=ax, cmap=cmap, alpha=0.5, antialiased=True)
 
-    # Plot precip contour
-    ds_sfc.qrain_sfc.plot.contour(ax=ax, levels=[1e-4], colors=["#adff2f"], linewidths=0.5)
+    # Plot single precip contour line
+    ds_sfc.qrain_sfc.plot.contour(ax=ax, levels=[1e-4], colors=[bright_green], linewidths=0.5)
+
+    # Plot significant precip as filled areas
+    # ds_sfc.qrain_sfc.plot.contourf(
+    #    ax=ax,
+    #    levels=[1e-4, 1e-2],
+    #    colors=[bright_green],
+    #    alpha=0.35,
+    #    add_colorbar=False,
+    #    extend="max",
+    #    antialiased=True,
+    # )
 
     # Remove labels we don't need that xarray added
     ax.set_title("")
