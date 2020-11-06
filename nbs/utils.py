@@ -39,3 +39,43 @@ def add121(ax, *, c="0.7", lw=2, limits="orig"):
     else:
         ax.autoscale(enable=True, axis="both", tight=True)
         ax.axis("square")
+
+
+def subplots_share_labels(axs, *, xlabel=None, ylabel=None):
+    """For array of axes `axs`, properly share x and y labels
+    (x on bottom only, y on left only).
+    """
+    m, n = axs.shape
+
+    # Try to get labels if they weren't provided
+    ax0 = axs.flat[0]
+    if xlabel is None:
+        xlabel = ax0.get_xlabel()
+    if ylabel is None:
+        ylabel = ax0.get_ylabel()
+
+    # Need both
+    if not (xlabel and ylabel):
+        raise ValueError("xlabel and ylabel not provided or could not be detected")
+
+    if ax0.xaxis.get_label_position() == "top":  # default
+        ix = m - 1  # last row
+    else:
+        ix = 0
+
+    if ax0.yaxis.get_label_position() == "left":  # default
+        jy = 0  # first column
+    else:
+        jy = n - 1
+
+    for i in range(m):
+        for j in range(n):
+            if j == jy:
+                axs[i, j].set_ylabel(ylabel)
+            else:
+                axs[i, j].set_ylabel("")
+
+            if i == ix:
+                axs[i, j].set_xlabel(xlabel)
+            else:
+                axs[i, j].set_xlabel("")

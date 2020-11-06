@@ -22,6 +22,7 @@ import statsmodels.formula.api as smf
 import xarray as xr
 from scipy import stats
 from utils import add121
+from utils import subplots_share_labels
 
 # %matplotlib widget
 
@@ -120,6 +121,8 @@ for vn, ax in zip(to_plot, axs.flat):
         ax.set(title="")
     else:  # 2-d
         da.plot(ax=ax, **kwargs)
+
+subplots_share_labels(axs)
 
 # %% [markdown]
 # ## Scatter plots
