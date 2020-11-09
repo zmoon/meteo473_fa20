@@ -3,6 +3,7 @@ utils
 might move to data package or another later?
 """
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def add121(ax, *, c="0.7", lw=2, limits="orig"):
@@ -41,14 +42,31 @@ def add121(ax, *, c="0.7", lw=2, limits="orig"):
         ax.axis("square")
 
 
-def subplots_share_labels(axs, *, xlabel=None, ylabel=None):
+def subplots_share_labels(fig=None, *, xlabel=None, ylabel=None):
     """For array of axes `axs`, properly share x and y labels
     (x on bottom only, y on left only).
+
+    Note also
+
+       for ax in axs.flat:
+           ax.label_outer()
+
+    which is simpler but only works if labels are in standard position.
     """
-    m, n = axs.shape
+    # Get geom
+    if fig is None:
+        fig = plt.gcf()
+    axs = fig.axes  # a list, not array
+    m, n = axs[0].get_subplotspec().get_topmost_subplotspec().get_gridspec().get_geometry()
+
+    # Form array
+    axs_arr = np.empty((m, n), dtype=object)
+    for i in range(m):
+        for j in range(n):
+            axs_arr[i, j] = axs[i * n + j]
 
     # Try to get labels if they weren't provided
-    ax0 = axs.flat[0]
+    ax0 = axs_arr[-1, 0] if axs_arr[0, 0].xaxis.get_label_position() == "bottom" else axs_arr[0, 0]
     if xlabel is None:
         xlabel = ax0.get_xlabel()
     if ylabel is None:
@@ -58,7 +76,7 @@ def subplots_share_labels(axs, *, xlabel=None, ylabel=None):
     if not (xlabel and ylabel):
         raise ValueError("xlabel and ylabel not provided or could not be detected")
 
-    if ax0.xaxis.get_label_position() == "top":  # default
+    if ax0.xaxis.get_label_position() == "bottom":  # default
         ix = m - 1  # last row
     else:
         ix = 0
@@ -71,11 +89,11 @@ def subplots_share_labels(axs, *, xlabel=None, ylabel=None):
     for i in range(m):
         for j in range(n):
             if j == jy:
-                axs[i, j].set_ylabel(ylabel)
+                axs_arr[i, j].set_ylabel(ylabel)
             else:
-                axs[i, j].set_ylabel("")
+                axs_arr[i, j].set_ylabel("")
 
             if i == ix:
-                axs[i, j].set_xlabel(xlabel)
+                axs_arr[i, j].set_xlabel(xlabel)
             else:
-                axs[i, j].set_xlabel("")
+                axs_arr[i, j].set_xlabel("")
