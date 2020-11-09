@@ -142,7 +142,11 @@ to_plot = ["w", "theta", "dtheta"]
 fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True, sharey=True)
 
 for vn, ax in zip(to_plot, axs.flat):
-    ds_hs1[vn].isel(hgt=is_hgt_range).plot.contourf(levels=30, ax=ax)
+    da = ds_hs1[vn].isel(hgt=is_hgt_range)
+    if vn == "theta":
+        da.plot.contour(levels=20, ax=ax, add_colorbar=True)
+    else:
+        da.plot.contourf(levels=30, ax=ax)
 
 # Prepare to label cross section end points
 coords_a = ds_hs1.lat.values[0], ds_hs1.lon.values[0]
@@ -160,14 +164,10 @@ for i, ax in enumerate(axs.flat):
     else:
         ax.set_xlabel(r"Latitude of SW$\to$NE gridpt-wise cross section")
 
-# subplots_share_labels(axs)  # TODO: fix input to use asarray and use current fig if None and deal with 1 col or 1 row only
-for ax in axs.flat:
-    ax.label_outer()  # simpler than my fn...
-
 fig.set_tight_layout(dict(h_pad=0.3))
 
 # %% [markdown]
-# 👆 We can see some waviness in the standard $\theta$ plot. It becomes much more apparent when subtracting the mean of each level ($\theta'$).
+# 👆 We can see some waviness in the standard $\theta$ plot (I feel it is easier to see with contour lines instead of fills). It becomes much more apparent when subtracting the mean of each level ($\theta'$).
 
 # %%
 # Second method - interpolation, choosing A and B points and interpolating on line connecting them
