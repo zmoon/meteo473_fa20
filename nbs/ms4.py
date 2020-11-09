@@ -22,6 +22,7 @@ import numpy as np
 import xarray as xr
 from ipywidgets import interact
 from utils import add121
+from utils import subplots_share_labels
 
 # import statsmodels.api as sm
 # import statsmodels.formula.api as smf
@@ -89,6 +90,85 @@ ds.w.isel(lat=144, hgt=is_hgt_range).plot.contourf(levels=60, size=5, aspect=1.8
 # > Generate southwest-to-northeast vertical cross sections of vertical velocity, potential temperature, and perturbation potential temperature (i.e. potential temperature minus its height-dependent average) through one of the strong horse-shoe shaped convectively generated gravity waves northwest of the eye. [20 pts]
 # >
 # > If these waves tilt, they are vertically propagating.  If they don’t, they are horizontally propagating.  Which is the case?  [5 pts]
+#
+# There is one horseshoe with center around 128.4 degLon, 12.2 degLat in the UT/LS region.
+
+# %%
+# Add dtheta to ds
+ds["dtheta"] = ds["theta"] - ds.theta.mean(dim=["lat", "lon"])
+ds.dtheta.attrs.update(
+    long_name=r"Potential temperature difference wrt. height level mean $\theta'$", units="K"
+)
+
+# %%
+# First method - going by gridpoints
+ds_hsc = ds.sel(lon=128.4, lat=12.2, method="nearest")
+ilat_hsc, ilon_hsc = (
+    np.where(ds.lat.values == ds_hsc.lat.values)[0][0],
+    np.where(ds.lon.values == ds_hsc.lon.values)[0][0],
+)
+print(ds_hsc.lat.values, ds_hsc.lon.values)
+
+# Extend SW to NE
+n_ph = 20  # number of points to either side of center point
+ilat_hs = ilat_hsc + np.arange(-n_ph, n_ph + 1)
+ilon_hs = ilon_hsc + np.arange(-n_ph, n_ph + 1)
+lat_hs1 = ds.lat.isel(lat=ilat_hs)
+lon_hs1 = ds.lon.isel(lon=ilon_hs)
+print(lat_hs1.values)
+print(lon_hs1.values, end="\n\n")
+
+# Here are many attempts to do the vectorized indexing that don't work
+# print(ds.hfx[xr.DataArray(ilat_hs, dims="lat"), xr.DataArray(ilon_hs, dims="lon")])
+# ds.hfx[xr.DataArray(ilat_hs, dims="lat"), xr.DataArray(ilat_hs, dims="lat")]
+# ds.hfx[xr.DataArray(ilat_hs, dims="lon"), xr.DataArray(ilat_hs, dims="lon")]
+# print(ds.hfx.isel(lon=xr.DataArray(ilon_hs, dims="lon"), lat=xr.DataArray(ilon_hs, dims="lon")))
+# print(ds.hfx.isel(lat=xr.DataArray(ilat_hs, dims="lat"), lon=xr.DataArray(ilat_hs, dims="lat")))
+
+# This one does work!
+# xarray used to have `.sel_points` and `isel_points` that made this more straightforward and less weird, but no more.
+# print(ds.hfx.isel(lat=xr.DataArray(ilat_hs, dims="lat"), lon=xr.DataArray(ilon_hs, dims="lat")))
+# Or this. Just have to keep the `dims` the same it seems.
+# print(ds.hfx.isel(lat=xr.DataArray(ilat_hs, dims="lon"), lon=xr.DataArray(ilon_hs, dims="lon")))
+
+ds_hs1 = ds.isel(lat=xr.DataArray(ilat_hs, dims="lat"), lon=xr.DataArray(ilon_hs, dims="lat"))
+assert np.all(ds_hs1.lat.values == lat_hs1.values) and np.all(ds_hs1.lon.values == lon_hs1.values)
+
+# %%
+is_hgt_range = (ds.hgt > 13000) & (ds.hgt < 28000)
+
+to_plot = ["w", "theta", "dtheta"]
+
+fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True, sharey=True)
+
+for vn, ax in zip(to_plot, axs.flat):
+    ds_hs1[vn].isel(hgt=is_hgt_range).plot.contourf(levels=30, ax=ax)
+
+# subplots_share_labels(axs)  # TODO: fix input to use asarray and use current fig if None and deal with 1 col or 1 row only
+
+
+# Prepare to label cross section end points
+coords_a = ds_hs1.lat.values[0], ds_hs1.lon.values[0]
+s_coords_a = f"({coords_a[0]:.2f}°N, {coords_a[1]:.2f}°E)"
+coords_b = ds_hs1.lat.values[-1], ds_hs1.lon.values[-1]
+s_coords_b = f"({coords_b[0]:.2f}°N, {coords_b[1]:.2f}°E)"
+
+# Adjustments
+for i, ax in enumerate(axs.flat):
+    if i >= 1:
+        ax.set_title(s_coords_a, loc="left", fontsize=10)
+        ax.set_title(s_coords_b, loc="right", fontsize=10)
+    if i < len(axs) - 1:
+        ax.set_xlabel("")
+    else:
+        ax.set_xlabel(r"Latitude of SW$\to$NE gridpt-wise cross section")
+
+# %% [markdown]
+# 👆 We can see some waviness in the standard $\theta$ plot. It becomes much more apparent when subtracting the mean of each level ($\theta'$).
+
+# %%
+# Second method - interpolation, choosing A and B points and interpolating on line connecting them
+# TODO
 
 # %% [markdown]
 # ## Momentum flux
