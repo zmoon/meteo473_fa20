@@ -64,7 +64,7 @@ fig = plt.figure(figsize=(8, 6))
 def plot_w_hgt(hgt=17000, symlog=False, symlog_linthresh=1.0, contourf=False, nlevs=60):
     da = ds.w.sel(hgt=hgt)
     fig.clf()
-    ax = plt.axes()
+    ax = fig.add_subplot()
     norm = None if not symlog else mpl.colors.SymLogNorm(linthresh=symlog_linthresh, base=10)
     fn = da.plot if not contourf else partial(da.plot.contourf, levels=nlevs)
     # note nlevs doesn't seem to work properly with SymLogNorm (actual # of levels come out less)
@@ -100,9 +100,13 @@ ds.dtheta.attrs.update(
     long_name=r"Potential temperature difference wrt. height level mean $\theta'$", units="K"
 )
 
+# %% [markdown]
+# ### Gridpt-wise SW->NE VXS
+
 # %%
 # First method - going by gridpoints
-ds_hsc = ds.sel(lon=128.4, lat=12.2, method="nearest")
+lat_hsc, lon_hsc = 12.2, 128.4
+ds_hsc = ds.sel(lon=lon_hsc, lat=lat_hsc, method="nearest")
 ilat_hsc, ilon_hsc = (
     np.where(ds.lat.values == ds_hsc.lat.values)[0][0],
     np.where(ds.lon.values == ds_hsc.lon.values)[0][0],
@@ -162,16 +166,83 @@ for i, ax in enumerate(axs.flat):
     if i < len(axs) - 1:
         ax.set_xlabel("")
     else:
-        ax.set_xlabel(r"Latitude of SW$\to$NE gridpt-wise cross section")
+        ax.set_xlabel(rf"Latitude of SW$\to$NE gridpt-wise cross section [{ds.lat.units}]")
 
 fig.set_tight_layout(dict(h_pad=0.3))
 
 # %% [markdown]
-# 👆 We can see some waviness in the standard $\theta$ plot (I feel it is easier to see with contour lines instead of fills). It becomes much more apparent when subtracting the mean of each level ($\theta'$).
+# 👆 We can see some waviness in the standard $\theta$ plot (I feel it is easier to see with contour lines instead of fills). It becomes much more apparent when subtracting the mean of each level ($\theta'$). Looking at the temperature perturbation/anomaly structures ($\theta'$) and $w$, the waves do seem to be somewhat tilting with height.
+
+# %% [markdown]
+# ### Interactive interpolating VXS
 
 # %%
 # Second method - interpolation, choosing A and B points and interpolating on line connecting them
-# TODO
+
+fig = plt.figure(figsize=(4.5, 3.2))
+fig2 = plt.figure(figsize=(7, 3.5))
+
+
+def vxs_interp(
+    lat_a=11.65,
+    lon_a=127.9,
+    lat_b=13.1,
+    lon_b=129.1,
+    n_points=20,
+    variable="w",
+    contourf=True,
+    interp_method="linear",
+):
+    fig.clf()
+    ax = fig.add_subplot()
+    fig2.clf()
+    ax2 = fig2.add_subplot()
+
+    # Plot reference
+    # plot_w_hgt(hgt=23000, symlog=True, symlog_linthresh=0.5, contourf=True, nlevs=60)
+    ds.w.sel(hgt=23000).plot(ax=ax)
+
+    # Plot chosen end-points
+    ax.plot([lon_a, lon_b], [lat_a, lat_b], "g.-", lw=2)
+    ax.annotate("A", (lon_a, lat_a), xytext=(-10, -10), textcoords="offset points", color="g")
+    ax.annotate("B", (lon_b, lat_b), xytext=(2, 2), textcoords="offset points", color="g")
+
+    # Interpolate and plot vertical cross-section
+    slope = (lat_b - lat_a) / (lon_b - lon_a)
+    lon_line = np.linspace(lon_a, lon_b, n_points)
+    lat_line = lat_a + slope * (lon_line - lon_a)
+    assert np.isclose(lat_b, lat_line[-1])
+    dims = "lat" if not lat_b == lat_a else "lon"  # note one dim must be doubled, like before
+    da = (
+        ds[variable]
+        .interp(
+            lat=xr.DataArray(lat_line, dims=dims),
+            lon=xr.DataArray(lon_line, dims=dims),
+            method=interp_method,
+        )
+        .isel(hgt=is_hgt_range)
+    )
+    if contourf:
+        da.plot.contourf(levels=30, ax=ax2)
+    else:
+        da.plot(ax=ax2)
+    if dims == "lat":
+        ax2.set_xlabel(f"Latitude of cross section [{ds.lat.units}]")
+    elif dims == "lon":
+        ax2.set_xlabel(f"Longitude of cross section [{ds.lon.units}]")
+    # TODO: 2nd x-ax to show A->B distance in km
+
+
+lat_range = (ds.lat.values[0], ds.lat.values[-1], 0.05)
+lon_range = (ds.lon.values[0], ds.lon.values[-1], 0.05)
+locs = dict(lat_a=lat_range, lon_a=lon_range, lat_b=lat_range, lon_b=lon_range)
+interact(
+    vxs_interp,
+    **locs,
+    n_points=(3, 400),
+    variable=["w", "dtheta", "theta", "u"],
+    interp_method=["linear", "nearest"],
+)
 
 # %% [markdown]
 # ## Momentum flux
