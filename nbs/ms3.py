@@ -122,7 +122,7 @@ for vn, ax in zip(to_plot, axs.flat):
     else:  # 2-d
         da.plot(ax=ax, **kwargs)
 
-subplots_share_labels(axs)
+subplots_share_labels()
 
 # %% [markdown]
 # ## Scatter plots
