@@ -14,18 +14,12 @@
 #     name: python3
 # ---
 # %%
-from functools import partial
-
+# from functools import partial
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from ipywidgets import interact
-from utils import add121
-from utils import subplots_share_labels
-
-# import statsmodels.api as sm
-# import statsmodels.formula.api as smf
 
 # %matplotlib widget
 
@@ -248,12 +242,77 @@ interact(
 # ## Momentum flux
 
 # %% [markdown]
-# > Select an area 100x100 grid points centered on one (for example the one at 70 EW and 205 NS) of these convective cells. Compute the momentum flux components (W*U and W*V) for all levels in this area.  Average over each level and plot the profiles of the U and V components of momentum flux as a function of height from 1 to 29 km of geopotential height.  Also plot the profiles of the direction and magnitude of the flux. [20 pts]
+# > Select an area 100x100 grid points centered on one (for example the one at 70 EW and 205 NS) of these convective cells. Compute the momentum flux components (W\*U and W\*V) for all levels in this area.  Average over each level and plot the profiles of the U and V components of momentum flux as a function of height from 1 to 29 km of geopotential height.  Also plot the profiles of the direction and magnitude of the flux. [20 pts]
 # >
 # > Is the convective transport of momentum upward or downward (explain your reasoning)? Hint: think about the wind direction in your flux calculation box.  If U and V are of the same sign as Uflux and Vflux then the momentum transport is upward.  Note: you may find it helpful to plot U and V profiles as well before trying to work this out.  At what level is the convective momentum transport most extreme?  How closely does the top of the convective transport of momentum compare with the top of convection that you worked out above? [5 pts]
 
 # %% [markdown]
 # > Is the gravity wave transport of momentum upward or downward? Is it more extreme than the convective transport or less so?  [5 pts]
+
+# %%
+ihgt_mf = (ds.hgt >= 1000) & (ds.hgt <= 29000)
+
+fig = plt.figure(figsize=(4, 3))
+fig2 = plt.figure(figsize=(9, 4.5))
+
+
+def mom(ilat_mfc=205, ilon_mfc=70):
+    fig.clf()
+    fig2.clf()
+
+    # Orient ourselves
+    ax = fig.add_subplot()
+    ds.w.sel(hgt=23000).plot(ax=ax)
+    ax.plot(ds.lon[ilon_mfc], ds.lat[ilat_mfc], "g*", ms=10, mfc="none")
+
+    # Box (101x101 but whatevs)
+    ilat_mf = ilat_mfc + np.arange(-50, 51)
+    ilon_mf = ilon_mfc + np.arange(-50, 51)
+
+    # TODO: Plot box
+
+    # Selection
+    ds_mf = ds.isel(hgt=ihgt_mf, lat=ilat_mf, lon=ilon_mf)
+
+    # Calculate
+    ds_mf["wu"] = ds.w * ds.u
+    ds_mf.wu.attrs.update(long_name="Vertical flux of x-momentum $w u$", units="m$^2$ s$^{-2}$")
+    ds_mf["wv"] = ds.w * ds.v
+    ds_mf.wv.attrs.update(long_name="Vertical flux of y-momentum $w v$", units="m$^2$ s$^{-2}$")
+    ds_mf["mf_mag"] = np.sqrt(ds_mf.wu ** 2 + ds_mf.wv ** 2)
+    ds_mf.mf_mag.attrs.update(
+        long_name="Magnitude of vertical flux of horizontal momentum", units="m$^2$ s$^{-2}$"
+    )
+    ds_mf["mf_dir"] = np.arctan2(ds_mf.wv, ds_mf.wu)
+    ds_mf.mf_dir.attrs.update(
+        long_name="Direction of vertical flux of horizontal momentum", units="radians"
+    )
+
+    # Plot level-average profiles
+    # fig, [ax1, ax2, ax3] = plt.subplots(1, 3, , sharey=True)
+    ax1 = fig2.add_subplot(131)
+    ax2 = fig2.add_subplot(132, sharey=ax1)
+    ax3 = fig2.add_subplot(133, sharey=ax1)
+
+    ax1.axvline(x=0, ls=":", c="0.7")
+    ds_mf.wu.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax1, label="$w u$")
+    ds_mf.wv.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax1, label="$w v$")
+    ax1.set_xlabel(f"Momentum flux components [{ds_mf.wu.units}]")
+    ax1.legend()
+    ax1.autoscale(enable=True, axis="y", tight=True)
+
+    ds_mf.mf_mag.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", c="forestgreen", ax=ax2)
+
+    ds_mf.mf_dir.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", c="crimson", ax=ax3)
+
+    for ax in fig2.axes:
+        ax.label_outer()
+
+
+interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249))
+
+# %% [markdown]
+# 👆 At the 70 EW and 205 NS point: Above the tropopause level, the magnitudes of the individual components are generally similar and smaller than in the troposphere. But below, the $x$ component ($w u$) is considerably stronger in the upper troposphere. In the low–mid troposphere, the component magnitudes are comparable, but $w v$ is a bit stronger.
 
 # %% [markdown]
 # ## Shear
