@@ -255,10 +255,10 @@ interact(
 ihgt_mf = (ds.hgt >= 1000) & (ds.hgt <= 29000)
 
 fig = plt.figure(figsize=(4, 3))
-fig2 = plt.figure(figsize=(11, 4.5))
+fig2 = plt.figure(figsize=(12.5, 4.5))
 
 
-def mom(ilat_mfc=205, ilon_mfc=70):
+def mom(ilat_mfc=205, ilon_mfc=70):  # 202, 60 instead?
     fig.clf()
     fig2.clf()
 
@@ -292,10 +292,11 @@ def mom(ilat_mfc=205, ilon_mfc=70):
 
     # Plot level-average profiles
     # fig, [ax1, ax2, ax3] = plt.subplots(1, 3, , sharey=True)
-    ax1 = fig2.add_subplot(141)
-    ax2 = fig2.add_subplot(142, sharey=ax1)
-    ax3 = fig2.add_subplot(143, sharey=ax1)
-    ax4 = fig2.add_subplot(144, sharey=ax1)
+    ax1 = fig2.add_subplot(151)
+    ax2 = fig2.add_subplot(152, sharey=ax1)
+    ax3 = fig2.add_subplot(153, sharey=ax1)
+    ax4 = fig2.add_subplot(154, sharey=ax1)
+    ax5 = fig2.add_subplot(155, sharey=ax1)
 
     ax1.axvline(x=0, ls=":", c="0.7")
     ds_mf.wu.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax1, label="$w u$")
@@ -310,6 +311,16 @@ def mom(ilat_mfc=205, ilon_mfc=70):
 
     ax4.axvline(x=0, ls=":", c="0.7")
     ds_mf.w.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax4)
+
+    # TODO: 2nd x-ax on ax4 instead
+    ax5.axvline(x=0, ls=":", c="0.7")
+    ds_mf.u.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax5, label="$u$")
+    ds_mf.v.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax5, label="$v$")
+    np.sqrt(ds_mf.u ** 2 + ds_mf.v ** 2).mean(dim=("lat", "lon"), keep_attrs=True).plot(
+        y="hgt", ax=ax5, label="$u_h$"
+    )
+    ax5.set_xlabel("[m s$^{-1}$]")
+    ax5.legend()
 
     for ax in fig2.axes:
         ax.label_outer()
