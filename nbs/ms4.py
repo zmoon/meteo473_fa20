@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 from ipywidgets import interact
+from scipy.stats import binned_statistic_2d
 
 # %matplotlib widget
 
@@ -326,3 +327,48 @@ interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249))
 # > Plot, for the entire domain, the shear vectors between 9000 geopotential meters and 20000 geopotential meters over vertical velocity at 20000 geopotential meters.  [10 pts]
 # >
 # > Use this figure to illustrate the discussion in your report about why gravity waves in the stratosphere over the typhoon’s convection are horseshoe shaped with orientation changing with azimuth from the storm center.  Also discuss why the stratospheric gravity waves are much more circular in the northeast and southeast parts of your domain.  [10 pts]
+
+# %%
+# Compute shear
+u20 = ds.u.sel(hgt=20000).values
+v20 = ds.v.sel(hgt=20000).values
+u9 = ds.u.sel(hgt=9000).values
+v9 = ds.v.sel(hgt=9000).values
+du0 = u20 - u9
+dv0 = v20 - v9
+x0 = ds.lon.values
+y0 = ds.lat.values
+X0, Y0 = np.meshgrid(x0, y0)
+
+fig = plt.figure(figsize=(9.5, 7))
+
+
+def plot_shear(*, nxy=50, scale=500, stream=False, quiver=True):
+    fig.clf()
+    ax = fig.add_subplot()
+
+    # Horseshoes at 20km for reference
+    ds.w.sel(hgt=20000).plot(ax=ax, norm=mpl.colors.SymLogNorm(linthresh=0.35, base=10))
+
+    # Take shear to lower res (down-sample/up-scale)
+    res = binned_statistic_2d(X0.flatten(), Y0.flatten(), [du0.flatten(), dv0.flatten()], bins=nxy)
+    du = res.statistic[0]
+    dv = res.statistic[1]
+    xe = res.x_edge
+    ye = res.y_edge
+    x = (xe[:-1] + xe[1:]) / 2
+    y = (ye[:-1] + ye[1:]) / 2
+
+    # Plot streamlines (x and y have to be equally spaced!)
+    if stream:
+        ax.streamplot(x, y, du, dv, density=1.5, color="0.5")
+
+    # Plot shear vectors
+    if quiver:
+        # ax.quiver(x0, y0, du0, dv0)  # too many arrows if plot all points!
+        q = ax.quiver(x, y, du, dv, scale=scale, scale_units="width", color="0.2", alpha=0.9)
+        ax.set_title(f"Full plot width : {scale} m/s ", loc="left", fontsize=10)
+        ax.quiverkey(q, X=0.19, Y=1.042, U=20, label="20 m/s reference:", labelpos="W")
+
+
+interact(plot_shear, nxy=(10, 200), scale=(100, 1000, 10))
