@@ -100,6 +100,16 @@ ds.dtheta.attrs.update(
 # ### Gridpt-wise SW→NE VXS
 
 # %%
+# Note NumPy can do vectorized indexing easily (in xarray we will see it is less straightforward)
+a = np.arange(49).reshape((7, 7))
+print(a)
+i_a = np.arange(4, -1, -1)
+j_a = np.arange(0, 5)
+print(a[i_a, j_a])  # arrays, lists, and tuples of indices all work
+print(a[i_a.tolist(), j_a.tolist()])
+print(a[tuple(i_a.tolist()), tuple(j_a.tolist())])
+
+# %%
 # First method - going by gridpoints
 lat_hsc, lon_hsc = 12.2, 128.4
 ds_hsc = ds.sel(lon=lon_hsc, lat=lat_hsc, method="nearest")
@@ -255,10 +265,10 @@ interact(
 ihgt_mf = (ds.hgt >= 1000) & (ds.hgt <= 29000)
 
 fig = plt.figure(figsize=(4, 3))
-fig2 = plt.figure(figsize=(12.5, 4.5))
+fig2 = plt.figure(figsize=(10.5, 4.8))
 
 
-def mom(ilat_mfc=205, ilon_mfc=70):  # 202, 60 instead?
+def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
     fig.clf()
     fig2.clf()
 
@@ -268,8 +278,8 @@ def mom(ilat_mfc=205, ilon_mfc=70):  # 202, 60 instead?
     ax.plot(ds.lon[ilon_mfc], ds.lat[ilat_mfc], "g*", ms=10, mfc="none")
 
     # Box (101x101 but whatevs)
-    ilat_mf = ilat_mfc + np.arange(-50, 51)
-    ilon_mf = ilon_mfc + np.arange(-50, 51)
+    ilat_mf = ilat_mfc + np.arange(-nbox_half, nbox_half + 1)
+    ilon_mf = ilon_mfc + np.arange(-nbox_half, nbox_half + 1)
 
     # TODO: Plot box
 
@@ -292,11 +302,10 @@ def mom(ilat_mfc=205, ilon_mfc=70):  # 202, 60 instead?
 
     # Plot level-average profiles
     # fig, [ax1, ax2, ax3] = plt.subplots(1, 3, , sharey=True)
-    ax1 = fig2.add_subplot(151)
-    ax2 = fig2.add_subplot(152, sharey=ax1)
-    ax3 = fig2.add_subplot(153, sharey=ax1)
-    ax4 = fig2.add_subplot(154, sharey=ax1)
-    ax5 = fig2.add_subplot(155, sharey=ax1)
+    ax1 = fig2.add_subplot(141)
+    ax2 = fig2.add_subplot(142, sharey=ax1)
+    ax3 = fig2.add_subplot(143, sharey=ax1)
+    ax4 = fig2.add_subplot(144, sharey=ax1)
 
     ax1.axvline(x=0, ls=":", c="0.7")
     ds_mf.wu.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax1, label="$w u$")
@@ -308,25 +317,29 @@ def mom(ilat_mfc=205, ilon_mfc=70):  # 202, 60 instead?
     ds_mf.mf_mag.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", c="forestgreen", ax=ax2)
 
     ds_mf.mf_dir.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", c="crimson", ax=ax3)
+    ax3_xlim = ax3.get_xlim()
+    for label, rad in {"E": 0, "N": np.pi / 2, "W": np.pi, "S": 3 * np.pi / 2}.items():
+        if (rad > ax3_xlim[0]) & (rad < ax3_xlim[-1]):
+            ax3.text(rad, 1000, label, va="bottom", ha="center")
 
-    ax4.axvline(x=0, ls=":", c="0.7")
-    ds_mf.w.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax4)
+    ax4.axvline(x=0, ls=":", c="gold")
+    ds_mf.w.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax4, c="gold")
 
-    # TODO: 2nd x-ax on ax4 instead
+    ax5 = ax4.twiny()
     ax5.axvline(x=0, ls=":", c="0.7")
     ds_mf.u.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax5, label="$u$")
     ds_mf.v.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax5, label="$v$")
     np.sqrt(ds_mf.u ** 2 + ds_mf.v ** 2).mean(dim=("lat", "lon"), keep_attrs=True).plot(
         y="hgt", ax=ax5, label="$u_h$"
     )
-    ax5.set_xlabel("[m s$^{-1}$]")
+    ax5.set_xlabel("Horizontal winds [m s$^{-1}$]")
     ax5.legend()
 
     for ax in fig2.axes:
         ax.label_outer()
 
 
-interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249))
+interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249), nbox_half=(2, 50))
 
 # %% [markdown]
 # 👆 At the 70 EW and 205 NS point: Above the tropopause level, the magnitudes of the individual components are generally similar and smaller than in the troposphere. But below, the $x$ component ($w u$) is considerably stronger in the upper troposphere. In the low–mid troposphere, the component magnitudes are comparable, but $w v$ is a bit stronger. The signs of the components are consistent with upward transport of winds in the direction of the storms cyclonic rotation (here negative $u$ and $v$). Above the tropopause, in the lower LS layer there is non-zero flux corresponding to the gravity wave layer.
