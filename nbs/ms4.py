@@ -54,10 +54,11 @@ ds
 # We can build an interactive selector like we have done before.
 
 # %%
-fig = plt.figure(figsize=(8, 6))
+fig1 = plt.figure(figsize=(8, 6))
 
 
 def plot_w_hgt(hgt=17000, symlog=False, symlog_linthresh=1.0, contourf=False, nlevs=60):
+    fig = plt.figure(fig1.number)
     da = ds.w.sel(hgt=hgt)
     fig.clf()
     ax = fig.add_subplot()
@@ -78,6 +79,9 @@ is_hgt_range = (ds.hgt >= 1000) & (ds.hgt <= 29000)
 # recall 144 is the latitude of the gridpt-wise min in surface pressure
 # from `ds.psfc.argmin(dim=["lat", "lon"])`
 ds.w.isel(lat=144, hgt=is_hgt_range).plot.contourf(levels=60, size=4, aspect=1.8)
+
+# %% [markdown]
+# 👆 Convection seems to go up to 16 km or so for the most part.
 
 # %% [markdown]
 # ## Convective gravity waves
@@ -185,8 +189,8 @@ fig.set_tight_layout(dict(h_pad=0.3))
 # %%
 # Second method - interpolation, choosing A and B points and interpolating on line connecting them
 
-fig = plt.figure(figsize=(4.5, 3.2))
-fig2 = plt.figure(figsize=(7, 3.5))
+fig2 = plt.figure(figsize=(4.5, 3.2))
+fig2_2 = plt.figure(figsize=(7, 3.5))
 
 
 def vxs_interp(
@@ -199,10 +203,12 @@ def vxs_interp(
     contourf=True,
     interp_method="linear",
 ):
+    fig = plt.figure(fig2.number)
+    figb = plt.figure(fig2_2.number)
     fig.clf()
     ax = fig.add_subplot()
-    fig2.clf()
-    ax2 = fig2.add_subplot()
+    figb.clf()
+    ax2 = figb.add_subplot()
 
     # Plot reference
     # plot_w_hgt(hgt=23000, symlog=True, symlog_linthresh=0.5, contourf=True, nlevs=60)
@@ -264,11 +270,13 @@ interact(
 # %%
 ihgt_mf = (ds.hgt >= 1000) & (ds.hgt <= 29000)
 
-fig = plt.figure(figsize=(4, 3))
-fig2 = plt.figure(figsize=(10.5, 4.8))
+fig3 = plt.figure(figsize=(4, 3))
+fig3_2 = plt.figure(figsize=(10.5, 4.8))
 
 
 def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
+    fig = plt.figure(fig3.number)
+    fig2 = plt.figure(fig3_2.number)
     fig.clf()
     fig2.clf()
 
@@ -353,10 +361,11 @@ interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249), nbox_half=(2, 50))
 # > Use this figure to illustrate the discussion in your report about why gravity waves in the stratosphere over the typhoon’s convection are horseshoe shaped with orientation changing with azimuth from the storm center.  Also discuss why the stratospheric gravity waves are much more circular in the northeast and southeast parts of your domain.  [10 pts]
 
 # %%
-fig = plt.figure(figsize=(9.5, 7))
+fig4 = plt.figure(figsize=(9.5, 7))
 
 
 def plot_shear(*, nxy=50, scale=500, stream=False, quiver=True, h1=9000, h2=20000, swap_uv=False):
+    fig = plt.figure(fig4.number)
     fig.clf()
     ax = fig.add_subplot()
 
