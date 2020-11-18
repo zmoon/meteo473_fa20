@@ -121,6 +121,7 @@ ilat_hsc, ilon_hsc = (
     np.where(ds.lat.values == ds_hsc.lat.values)[0][0],
     np.where(ds.lon.values == ds_hsc.lon.values)[0][0],
 )
+print(ilat_hsc, ilon_hsc)
 print(ds_hsc.lat.values, ds_hsc.lon.values)
 
 # Extend SW to NE
@@ -147,6 +148,13 @@ print(lon_hs1.values, end="\n\n")
 
 ds_hs1 = ds.isel(lat=xr.DataArray(ilat_hs, dims="lat"), lon=xr.DataArray(ilon_hs, dims="lat"))
 assert np.all(ds_hs1.lat.values == lat_hs1.values) and np.all(ds_hs1.lon.values == lon_hs1.values)
+
+# Compare to doing this with NumPy only
+assert np.all(ds_hs1.w.values == ds.w.values[:, ilat_hs, ilon_hs])
+
+# Make sure line is in the right place
+ds.w.sel(hgt=23000).plot(size=3.5)
+plt.gca().plot(lon_hs1, lat_hs1, c="g")
 
 # %%
 is_hgt_range = (ds.hgt > 13000) & (ds.hgt < 28000)
@@ -256,6 +264,9 @@ interact(
     interp_method=["linear", "nearest"],
 )
 
+# %%
+ds.hgt
+
 # %% [markdown]
 # ## Momentum flux
 
@@ -289,7 +300,19 @@ def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
     ilat_mf = ilat_mfc + np.arange(-nbox_half, nbox_half + 1)
     ilon_mf = ilon_mfc + np.arange(-nbox_half, nbox_half + 1)
 
-    # TODO: Plot box
+    # Plot box
+    lon_a = ds.lon.values[ilon_mf[0]]
+    lon_b = ds.lon.values[ilon_mf[-1]]
+    lat_a = ds.lat.values[ilat_mf[0]]
+    lat_b = ds.lat.values[ilat_mf[-1]]
+    box = mpl.patches.Rectangle(
+        xy=(lon_a, lat_a),
+        width=(lon_b - lon_a),
+        height=(lat_b - lat_a),
+        color="green",
+        fill=False,
+    )
+    ax.add_patch(box)
 
     # Selection
     ds_mf = ds.isel(hgt=ihgt_mf, lat=ilat_mf, lon=ilon_mf)
