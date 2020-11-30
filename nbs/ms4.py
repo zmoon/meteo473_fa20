@@ -14,6 +14,7 @@
 #     name: python3
 # ---
 # %%
+import sys
 from functools import partial
 
 import matplotlib as mpl
@@ -22,6 +23,9 @@ import numpy as np
 import xarray as xr
 from ipywidgets import interact
 from scipy.stats import binned_statistic_2d
+
+sys.path.append("../")
+from data import latlon_to_xy_sphere
 
 # %matplotlib widget
 
@@ -156,12 +160,60 @@ assert np.all(ds_hs1.w.values == ds.w.values[:, ilat_hs, ilon_hs])
 ds.w.sel(hgt=23000).plot(size=3.5)
 plt.gca().plot(lon_hs1, lat_hs1, c="g")
 
+
+# %%
+def xs_dist_km(lat, lon):
+    "Compute the distance from first cross-section point."
+    x_a, y_a = latlon_to_xy_sphere(np.asarray(lat), np.asarray(lon))
+    # x_a = np.diag(x_a)
+    # y_a = np.diag(y_a)
+
+    # TODO: constant d_xy option?
+
+    return np.sqrt((x_a - x_a[0]) ** 2 + (y_a - y_a[0]) ** 2) / 1000
+
+
+def add_xs_dist_ax(ax, lat, lon):
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+    # This method takes space away from ax. Note the 0 size (height).
+    ax_divider = make_axes_locatable(ax)
+    ax2 = ax_divider.append_axes("bottom", size="0%", pad="25%")
+
+    # Create second Axes. Note the 0.0 height.
+    # This method doesn't work with tight_layout
+    # ax2 = plt.gcf().add_axes((0.1,0.1,0.8,0.0))
+
+    ax2.yaxis.set_visible(False)  # hide the yaxis
+
+    # TODO: make sharex work (for zooming, etc.) by using a tick label fn
+    # e.g., interpolating based on lat or lon (so works for real d_rel, where diff(d_rel) is not constant)
+    # ax2.sharex(ax)
+
+    d_rel = xs_dist_km(lat, lon)
+    ax2.plot(d_rel, np.zeros_like(d_rel))
+
+    ax2.set_xlim(xmin=d_rel.min(), xmax=d_rel.max())
+    ax2.set_xlabel("Distance from A along cross section [km]")
+
+
+d_rel = xs_dist_km(lat_hs1.values, lon_hs1.values)
+
+print(np.diff(d_rel))
+
 # %%
 is_hgt_range = (ds.hgt > 13000) & (ds.hgt < 28000)
 
 to_plot = ["w", "theta", "dtheta"]
 
-fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True, sharey=True)
+fig, axs = plt.subplots(
+    3,
+    1,
+    figsize=(8, 10),
+    sharex=True,
+    sharey=True,
+    gridspec_kw=dict(height_ratios=[1, 1, 1 / (1 - 0.20)]),
+)
 
 for vn, ax in zip(to_plot, axs.flat):
     da = ds_hs1[vn].isel(hgt=is_hgt_range)
@@ -185,6 +237,9 @@ for i, ax in enumerate(axs.flat):
         ax.set_xlabel("")
     else:
         ax.set_xlabel(rf"Latitude of SW$\to$NE gridpt-wise cross section [{ds.lat.units}]")
+
+# Label distance along xs
+add_xs_dist_ax(axs.flat[-1], lat_hs1, lon_hs1)
 
 fig.set_tight_layout(dict(h_pad=0.3))
 
