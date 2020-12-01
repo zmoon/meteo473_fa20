@@ -173,8 +173,9 @@ def xs_dist_km(lat, lon):
     return np.sqrt((x_a - x_a[0]) ** 2 + (y_a - y_a[0]) ** 2) / 1000
 
 
-def add_xs_dist_ax(ax, lat, lon):
+def add_xs_dist_ax(ax, lat, lon, *, interp="lat"):
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from scipy import interpolate
 
     # This method takes space away from ax. Note the 0 size (height).
     ax_divider = make_axes_locatable(ax)
@@ -186,20 +187,49 @@ def add_xs_dist_ax(ax, lat, lon):
 
     ax2.yaxis.set_visible(False)  # hide the yaxis
 
-    # TODO: make sharex work (for zooming, etc.) by using a tick label fn
-    # e.g., interpolating based on lat or lon (so works for real d_rel, where diff(d_rel) is not constant)
+    # Construct interpolator for relative xs distance based on lat or lon
+    d_rel = xs_dist_km(lat, lon)
+    if interp == "lat":
+        x = lat
+    elif interp == "lon":
+        x = lon
+    else:
+        raise ValueError
+    d_rel_interp = interpolate.interp1d(x, d_rel, bounds_error=False)
+
+    # TODO: instead of adding extra ax, make a formatter that shows both lat/lon and d_rel
+    def d_fmt(x, pos):
+        "lat or lon -> distance"
+        if pos is not None:
+            return f"{d_rel_interp(x):.2f}"
+
+    d_fmter = mpl.ticker.FuncFormatter(d_fmt)
+
+    # This ends up looking nicer for static plot cf. matching the tick locations
+    ax2.plot(d_rel, np.zeros_like(d_rel))
+    ax2.set_xlim(xmin=d_rel.min(), xmax=d_rel.max())
+
+    # Using sharex changes the tick labels for `ax` as well...
+    # But zoom doesn't work properly if not included
     # ax2.sharex(ax)
 
-    d_rel = xs_dist_km(lat, lon)
-    ax2.plot(d_rel, np.zeros_like(d_rel))
+    # TODO: try doing zoom/pan event callback, updating the limits
+    # https://gist.github.com/tacaswell/3144287
 
-    ax2.set_xlim(xmin=d_rel.min(), xmax=d_rel.max())
+    # Plot vs lat or lon but transform the tick labels to d_rel
+    # ax2.plot(x, np.zeros_like(d_rel))
+    # ax2.xaxis.set_major_formatter(d_fmter)
+    # ax2.set_xlim(xmin=x.min(), xmax=x.max())
+
     ax2.set_xlabel("Distance from A along cross section [km]")
 
 
 d_rel = xs_dist_km(lat_hs1.values, lon_hs1.values)
 
-print(np.diff(d_rel))
+print("diff(d_rel):", np.diff(d_rel))
+
+# fig, ax = plt.subplots(figsize=(8, 3))
+# add_xs_dist_ax(ax, lat_hs1, lon_hs1)
 
 # %%
 is_hgt_range = (ds.hgt > 13000) & (ds.hgt < 28000)
