@@ -437,6 +437,18 @@ def mom(ilat_mfc=202, ilon_mfc=60, nbox_half=25):
     )
     # Note: for meteo angle: `fluxDir = np.mod(270-(np.arctan2(vFlux,uFlux)*180/np.pi), 360)` (from George)
 
+    # Better direction mean (circular mean / mean of angles)
+    alpha = ds_mf.mf_dir
+    dir_avg_moa1 = np.arctan2(
+        np.sin(alpha).mean(dim=("lat", "lon")), np.cos(alpha).mean(dim=("lat", "lon"))
+    )
+    dir_avg_moa2 = np.angle((np.exp(1j * alpha)).sum(dim=("lat", "lon")))
+    assert np.allclose(dir_avg_moa1, dir_avg_moa2)
+    ds_mf["mf_dir_avg"] = dir_avg_moa1
+    ds_mf.mf_dir_avg.attrs.update(
+        long_name="Direction of domain-mean horizontal momentum flux", units="radians"
+    )
+
     # Plot level-average profiles
     # fig, [ax1, ax2, ax3] = plt.subplots(1, 3, , sharey=True)
     ax1 = fig2.add_subplot(141)
@@ -460,10 +472,11 @@ def mom(ilat_mfc=202, ilon_mfc=60, nbox_half=25):
     ax2.legend(fontsize=9)
 
     ds_mf.mf_dir_of_avg.plot(y="hgt", ax=ax3, c="forestgreen", label="dir of mean vector")
+    ds_mf.mf_dir_avg.plot(y="hgt", ax=ax3, c="crimson", label="mean dir in domain\n(circular mean)")
     ds_mf.mf_dir.mean(dim=("lat", "lon"), keep_attrs=True).plot(
-        y="hgt", ax=ax3, c="crimson", label="mean dir in domain"
+        y="hgt", ax=ax3, ls=":", c="crimson", label="mean dir in domain\n(naive)"
     )
-    ax3.legend(fontsize=9)
+    ax3.legend(fontsize=8)
     # Label cardinal directions
     ax3.set_xlim((-np.pi, np.pi))
     cardinal_dirs = {"E": 0, "N": np.pi / 2, "W": np.pi, "S": -np.pi / 2, " W ": -np.pi}
