@@ -379,7 +379,7 @@ fig3 = plt.figure(figsize=(4, 3))
 fig3_2 = plt.figure(figsize=(10.5, 4.8))
 
 
-def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
+def mom(ilat_mfc=202, ilon_mfc=60, nbox_half=25):
     fig = plt.figure(fig3.number)
     fig2 = plt.figure(fig3_2.number)
     fig.clf()
@@ -420,10 +420,22 @@ def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
     ds_mf.mf_mag.attrs.update(
         long_name="Magnitude of vertical flux of horizontal momentum", units="m$^2$ s$^{-2}$"
     )
-    ds_mf["mf_dir"] = np.arctan2(ds_mf.wv, ds_mf.wu)
+    ds_mf["mf_dir"] = np.arctan2(ds_mf.wv, ds_mf.wu)  # gives points in [-pi, pi]
     ds_mf.mf_dir.attrs.update(
         long_name="Direction of vertical flux of horizontal momentum", units="radians"
     )
+    wu_avg = ds_mf.wu.mean(dim=("lat", "lon"), keep_attrs=True)
+    wv_avg = ds_mf.wv.mean(dim=("lat", "lon"), keep_attrs=True)
+    ds_mf["mf_mag_of_avg"] = np.sqrt(wu_avg ** 2 + wv_avg ** 2)
+    ds_mf.mf_mag_of_avg.attrs.update(
+        long_name="Magnitude of domain-mean horizontal momentum flux vector",
+        units="m$^2$ s$^{-2}$",
+    )
+    ds_mf["mf_dir_of_avg"] = np.arctan2(wv_avg, wu_avg)  # gives points in [-pi, pi]
+    ds_mf.mf_dir_of_avg.attrs.update(
+        long_name="Direction of domain-mean horizontal momentum flux vector", units="radians"
+    )
+    # Note: for meteo angle: `fluxDir = np.mod(270-(np.arctan2(vFlux,uFlux)*180/np.pi), 360)` (from George)
 
     # Plot level-average profiles
     # fig, [ax1, ax2, ax3] = plt.subplots(1, 3, , sharey=True)
@@ -433,19 +445,32 @@ def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
     ax4 = fig2.add_subplot(144, sharey=ax1)
 
     ax1.axvline(x=0, ls=":", c="0.7")
-    ds_mf.wu.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax1, label="$w u$")
-    ds_mf.wv.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax1, label="$w v$")
-    ax1.set_xlabel(f"Momentum flux components [{ds_mf.wu.units}]")
+    wu_avg.plot(y="hgt", ax=ax1, label="$w u$")
+    wv_avg.plot(y="hgt", ax=ax1, label="$w v$")
+    ax1.set_xlabel(f"Momentum flux [{ds_mf.wu.units}]")
+    ax1.set_title("Mean vector components", fontsize=10)
     ax1.legend()
     ax1.autoscale(enable=True, axis="y", tight=True)
 
-    ds_mf.mf_mag.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", c="forestgreen", ax=ax2)
+    ds_mf.mf_mag_of_avg.plot(y="hgt", ax=ax2, c="forestgreen", label="mag of mean vector")
+    ds_mf.mf_mag.mean(dim=("lat", "lon"), keep_attrs=True).plot(
+        y="hgt", ax=ax2, label="mean mag in domain", c="crimson"
+    )
+    ax2.set_xlim(xmin=0)
+    ax2.legend(fontsize=9)
 
-    ds_mf.mf_dir.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", c="crimson", ax=ax3)
-    ax3_xlim = ax3.get_xlim()
-    for label, rad in {"E": 0, "N": np.pi / 2, "W": np.pi, "S": 3 * np.pi / 2}.items():
-        if (rad > ax3_xlim[0]) & (rad < ax3_xlim[-1]):
-            ax3.text(rad, 1000, label, va="bottom", ha="center")
+    ds_mf.mf_dir_of_avg.plot(y="hgt", ax=ax3, c="forestgreen", label="dir of mean vector")
+    ds_mf.mf_dir.mean(dim=("lat", "lon"), keep_attrs=True).plot(
+        y="hgt", ax=ax3, c="crimson", label="mean dir in domain"
+    )
+    ax3.legend(fontsize=9)
+    # Label cardinal directions
+    ax3.set_xlim((-np.pi, np.pi))
+    cardinal_dirs = {"E": 0, "N": np.pi / 2, "W": np.pi, "S": -np.pi / 2, " W ": -np.pi}
+    ax3.set_xticks(list(cardinal_dirs.values()))
+    ax3.set_xticklabels(list(cardinal_dirs.keys()))
+    ax3.set_xlabel(ax3.get_xlabel()[: -len(" [radians]")])
+    ax3.xaxis.grid(True)
 
     ax4.axvline(x=0, ls=":", c="gold")
     ds_mf.w.mean(dim=("lat", "lon"), keep_attrs=True).plot(y="hgt", ax=ax4, c="gold")
@@ -458,7 +483,7 @@ def mom(ilat_mfc=205, ilon_mfc=70, nbox_half=50):  # 202, 60 instead?
         y="hgt", ax=ax5, label="$u_h$"
     )
     ax5.set_xlabel("Horizontal winds [m s$^{-1}$]")
-    ax5.legend()
+    ax5.legend(loc="upper right")
 
     for ax in fig2.axes:
         ax.label_outer()
