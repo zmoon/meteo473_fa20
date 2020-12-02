@@ -213,14 +213,23 @@ def add_xs_dist_ax(ax, lat, lon, *, interp="lat"):
     # But zoom doesn't work properly if not included
     # ax2.sharex(ax)
 
-    # TODO: try doing zoom/pan event callback, updating the limits
-    # https://gist.github.com/tacaswell/3144287
-
     # Plot vs lat or lon but transform the tick labels to d_rel
     # ax2.plot(x, np.zeros_like(d_rel))
     # ax2.xaxis.set_major_formatter(d_fmter)
     # ax2.set_xlim(xmin=x.min(), xmax=x.max())
 
+    # Match with the lat/lon ax
+    def match_lims(event):
+        ax2.set_xlim(d_rel_interp(ax.get_xlim()))
+        # ax2.figure.canvas.draw_idle() # force re-draw the next time the GUI refreshes
+
+    fig = ax.get_figure()
+    fig.canvas.toolbar.push_current()
+    ax.callbacks.connect(
+        "xlim_changed", match_lims
+    )  # TODO: only works if zoom/pan happens on this specific ax
+
+    # Label
     ax2.set_xlabel("Distance from A along cross section [km]")
 
 
