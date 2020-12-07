@@ -1,5 +1,5 @@
 # meteo473_fa20
-My Meteo 473 TA workspace for Fall 2020
+My Meteo 473 (TA) solutions for Fall 2020
 
 ## Getting started
 
