@@ -60,16 +60,23 @@ ds
 # %%
 fig1 = plt.figure(figsize=(8, 6))
 
+q1_w_vmm = 0.01
+w_vmm = max(abs(ds.w.quantile([q1_w_vmm, 1 - q1_w_vmm]).values))
 
-def plot_w_hgt(hgt=17000, symlog=False, symlog_linthresh=1.0, contourf=False, nlevs=60):
+
+def plot_w_hgt(
+    hgt=17000, symlog=True, symlog_linthresh=0.35, contourf=False, nlevs=60, lock_clim=False
+):
     fig = plt.figure(fig1.number)
     da = ds.w.sel(hgt=hgt)
     fig.clf()
     ax = fig.add_subplot()
     norm = None if not symlog else mpl.colors.SymLogNorm(linthresh=symlog_linthresh, base=10)
+    vmin = -w_vmm if lock_clim else None
+    vmax = w_vmm if lock_clim else None
     fn = da.plot if not contourf else partial(da.plot.contourf, levels=nlevs)
-    # note nlevs doesn't seem to work properly with SymLogNorm (actual # of levels come out less)
-    fn(ax=ax, norm=norm)
+    # Note: `nlevs` doesn't seem to work properly with SymLogNorm (actual # of levels come out less)
+    fn(ax=ax, norm=norm, vmin=vmin, vmax=vmax, cmap="RdBu_r")
 
 
 interact(plot_w_hgt, hgt=(1000, 29000, 500), symlog_linthresh=(0.1, 2.0, 0.05), nlevs=(2, 200, 1))
