@@ -519,7 +519,17 @@ interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249), nbox_half=(2, 50))
 fig4 = plt.figure(figsize=(9.5, 7))
 
 
-def plot_shear(*, nxy=50, scale=500, stream=False, quiver=True, h1=9000, h2=20000, swap_uv=False):
+def plot_shear(
+    *,
+    h1=9000,
+    h2=20000,
+    nxy=50,
+    quiver=True,
+    quiver_scale=500,
+    stream=False,
+    stream_density=2.0,
+    swap_uv=False,
+):
     fig = plt.figure(fig4.number)
     fig.clf()
     ax = fig.add_subplot()
@@ -552,14 +562,14 @@ def plot_shear(*, nxy=50, scale=500, stream=False, quiver=True, h1=9000, h2=2000
 
     # Plot streamlines (x and y have to be equally spaced!)
     if stream:
-        ax.streamplot(x, y, du, dv, density=2.0, color="0.5")
+        ax.streamplot(x, y, du, dv, density=stream_density, color="0.5")
 
     # Plot shear vectors
     if quiver:
         # ax.quiver(x0, y0, du0, dv0)  # too many arrows if plot all points!
-        q = ax.quiver(x, y, du, dv, scale=scale, scale_units="width", color="0.2", alpha=0.9)
-        # q = ax.quiver(x0, y0, u1, v1, scale=scale, scale_units="width", color="0.2", alpha=0.9)  # test wind at one lev (lev1)
-        ax.set_title(f"Full plot width : {scale} m/s ", loc="left", fontsize=10)
+        q = ax.quiver(x, y, du, dv, scale=quiver_scale, scale_units="width", color="0.2", alpha=0.9)
+        # q = ax.quiver(x0, y0, u1, v1, scale=quiver_scale, scale_units="width", color="0.2", alpha=0.9)  # test wind at one lev (lev1)
+        ax.set_title(f"Full plot width : {quiver_scale} m/s ", loc="left", fontsize=10)
         ax.quiverkey(q, X=0.19, Y=1.045, U=20, label="20 m/s reference:", labelpos="W")
 
     # Labels
@@ -569,7 +579,14 @@ def plot_shear(*, nxy=50, scale=500, stream=False, quiver=True, h1=9000, h2=2000
 
 
 h_range = (0, int(ds.hgt.values[-1]), 500)
-interact(plot_shear, nxy=(10, 200), scale=(100, 1000, 10), h1=h_range, h2=h_range)
+interact(
+    plot_shear,
+    h1=h_range,
+    h2=h_range,
+    nxy=(10, 200),
+    quiver_scale=(100, 1000, 10),
+    stream_density=(0.5, 7.0),
+)
 
 # %%
 # confirm that v and u are not switched in the dataset
