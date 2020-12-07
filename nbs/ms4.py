@@ -521,6 +521,7 @@ fig4 = plt.figure(figsize=(9.5, 7))
 
 def plot_shear(
     *,
+    hw=20000,
     h1=9000,
     h2=20000,
     nxy=50,
@@ -535,7 +536,7 @@ def plot_shear(
     ax = fig.add_subplot()
 
     # Horseshoes at 20km for reference
-    im = ds.w.sel(hgt=20000).plot(ax=ax, norm=mpl.colors.SymLogNorm(linthresh=0.35, base=10))
+    im = ds.w.sel(hgt=hw).plot(ax=ax, norm=mpl.colors.SymLogNorm(linthresh=0.35, base=10))
     cb = im.colorbar
 
     # Compute shear as difference in winds
@@ -575,12 +576,13 @@ def plot_shear(
     # Labels
     ax.set_title(f"Shear between:\n{h1/1000:g} and {h2/1000:g} km [m/s]", loc="right", fontsize=10)
     ax.set_title("")
-    cb.set_label(f"{cb._label} at 20 km")
+    cb.set_label(f"{cb._label} at {hw/1000:g} km")
 
 
 h_range = (0, int(ds.hgt.values[-1]), 500)
 interact(
     plot_shear,
+    hw=h_range,
     h1=h_range,
     h2=h_range,
     nxy=(10, 200),
