@@ -266,7 +266,7 @@ for vn, ax in zip(to_plot, axs.flat):
     if vn == "theta":
         da.plot.contour(levels=20, ax=ax, add_colorbar=True)
     else:
-        da.plot.contourf(levels=30, ax=ax)
+        da.plot.contourf(levels=70 if vn == "w" else 30, ax=ax)
 
 # Prepare to label cross section end points
 coords_a = ds_hs1.lat.values[0], ds_hs1.lon.values[0]
@@ -512,7 +512,7 @@ def mom(ilat_mfc=202, ilon_mfc=60, nbox_half=25):
 interact(mom, ilat_mfc=(50, 249), ilon_mfc=(50, 249), nbox_half=(2, 50))
 
 # %% [markdown]
-# 👆 At the 70 EW and 205 NS point: Above the tropopause level, the magnitudes of the individual components are generally similar and smaller than in the troposphere. But below, the $x$ component ($w u$) is considerably stronger in the upper troposphere. In the low–mid troposphere, the component magnitudes are comparable, but $w v$ is a bit stronger. The signs of the components are consistent with upward transport of winds in the direction of the storms cyclonic rotation (here negative $u$ and $v$). Above the tropopause, in the lower LS layer there is non-zero flux corresponding to the gravity wave layer.
+# 👆 At the 70 EW and 205 NS point: Above the tropopause level, the magnitudes of the individual components are generally similar and smaller than in the troposphere. But below, the $x$ component ($w u$) is considerably stronger in the upper troposphere. In the low–mid troposphere, the component magnitudes are comparable, but $w v$ is a bit stronger. The signs of the components are consistent with upward transport of momentum associated with winds in the direction of the storm's cyclonic rotation (here negative $u$ and $v$). Above the tropopause, in the lower LS layer there is non-zero flux corresponding to the gravity wave layer. If we make the box smaller (e.g., `nbox_half=7`) we see mostly $w$ pos. and $u$, $v$ neg. in this region, reinforcing the notion from theory that gravity waves (from overshooting convection) should cause upward transport of kinetic E and momentum. Though air parcels are not net displaced by the gravity waves (unlike in the convective region), the pressure gradients caused by displacement of the isentropes accelerate the air, transferring momentum.
 
 # %% [markdown]
 # ## Shear
@@ -536,6 +536,7 @@ def plot_shear(
     quiver_scale=500,
     stream=False,
     stream_density=2.0,
+    mag=False,
     swap_uv=False,
 ):
     fig = plt.figure(fig4.number)
@@ -568,7 +569,7 @@ def plot_shear(
     x = (xe[:-1] + xe[1:]) / 2
     y = (ye[:-1] + ye[1:]) / 2
 
-    # Plot streamlines (x and y have to be equally spaced!)
+    # Plot streamlines (x and y have to be equally spaced! so can't use du0/dv0)
     if stream:
         ax.streamplot(x, y, du, dv, density=stream_density, color="0.5")
 
@@ -579,6 +580,10 @@ def plot_shear(
         # q = ax.quiver(x0, y0, u1, v1, scale=quiver_scale, scale_units="width", color="0.2", alpha=0.9)  # test wind at one lev (lev1)
         ax.set_title(f"Full plot width : {quiver_scale} m/s ", loc="left", fontsize=10)
         ax.quiverkey(q, X=0.19, Y=1.045, U=20, label="20 m/s reference:", labelpos="W")
+
+    # Plot shear magnitude contours (using all data)
+    if mag:
+        ax.contour(x0, y0, np.sqrt(du0 ** 2 + dv0 ** 2), levels=20, colors=None, linewidths=1.5)
 
     # Labels
     ax.set_title(f"Shear between:\n{h1/1000:g} and {h2/1000:g} km [m/s]", loc="right", fontsize=10)
@@ -597,6 +602,5 @@ interact(
     stream_density=(0.5, 7.0),
 )
 
-# %%
-# confirm that v and u are not switched in the dataset
-ds.v.sel(hgt=1000).plot(size=5)
+# %% [markdown]
+# 👆 In a still fluid, we get circular ripples; if the fluid is moving, we get more of a bow/horseshoe shape in the wake. Above, in many cases, the gravity wave signatures (horseshoes) are flatter in areas where the shear is stronger (e.g., 9N,129.5E; closer to the eye) and rounder in areas where the shear vectors are weaker (e.g., NE/SE, farther from the eye). In some of the horseshoes in the NE/SE that are especially circular (e.g., around 13.7N,133.7E), the vectors appear to diverge on one side of the circle and converge on the other side. In many, there is divergence in the shear (vectors) downwind of the horseshoe, consistent with the notion that the gravity wave energy gets concentrated upshear and dispersed downshear.
