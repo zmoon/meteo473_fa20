@@ -12,6 +12,8 @@
 #     language: python
 #     name: python3
 # ---
+# %% [markdown]
+# # Bootcamp
 # %%
 import ipywidgets
 import matplotlib.pyplot as plt

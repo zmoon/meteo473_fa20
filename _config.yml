@@ -1,0 +1,23 @@
+
+title: PSU Meteo 473 -- a TA's solutions
+author: zmoon
+
+execute:
+  execute_notebooks: cache
+
+repository:
+  url: https://github.com/zmoon/meteo473_fa20
+  branch: jup-book
+  path_to_book: nbs
+
+launch_buttons:
+  thebe: true
+
+exclude_patterns: [data/*, nbs/utils.py]
+
+sphinx:
+  config:
+    nb_custom_formats:
+      .py:
+        - jupytext.reads
+        - fmt: 'py:percent'

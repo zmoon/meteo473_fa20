@@ -13,8 +13,16 @@
 #     name: python3
 # ---
 # %% [markdown]
-# Note `xesmf` required!
-# %%
+# # Regridding
+# %% [markdown]
+# ```{warning}
+# `xesmf` required!
+# ```
+#
+# ```{margin}
+# A margin note!
+# ```
+# %% tags=["hide-cell"]
 import sys
 
 sys.path.append("../")
@@ -26,7 +34,7 @@ import xarray as xr
 import data
 from utils import add121
 
-# %matplotlib widget
+# #%matplotlib widget
 
 plt.rcParams.update(
     {

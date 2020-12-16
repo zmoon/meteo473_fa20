@@ -1,0 +1,16 @@
+
+# Landing page
+- file: README.md
+
+- part: Milestones
+  chapters:
+  - file: nbs/bootcamp.py
+  - file: nbs/ms1.py
+  - file: nbs/ms2.py
+  - file: nbs/ms3.py
+  - file: nbs/ms4.py
+
+- part: Extras
+  chapters:
+  - file: nbs/grids.py
+  - file: nbs/regrid.py

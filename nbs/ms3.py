@@ -13,6 +13,8 @@
 #     language: python
 #     name: python3
 # ---
+# %% [markdown]
+# # Milestone 3
 # %%
 import matplotlib as mpl
 import matplotlib.pyplot as plt

@@ -34,6 +34,7 @@ dependencies:
   - pip:
     - git+https://github.com/pangeo-data/xESMF#egg=xesmf  # master
     # - git+https://github.com/pangeo-data/xESMF.git@v0.4.0#egg=xesmf  # last (GitHub) release
+    - jupyter-book
   #
   # dev tools
   - pylint
