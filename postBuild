@@ -1,6 +1,12 @@
 # Build the netCDF file from the zipped .npy files
 python -c 'import data; data.write_nc()'
 
+# Convert nb py:percent -> ipynb so Binder JupyterLab links work properly
+for f in bootcamp.py ms?.py grids.py regrid.py; do
+  jupytext --to ipynb $f
+  rm $f
+done
+
 # JupyterLab extensions
 jupyter labextension install @jupyterlab/toc @jupyter-widgets/jupyterlab-manager
 jupyter lab build

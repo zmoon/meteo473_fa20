@@ -1,7 +1,19 @@
 # meteo473_fa20
 My Meteo 473 (TA) solutions for Fall 2020
 
-## Getting started
+## Browse on Binder
+
+| nb | &nbsp; |
+| -- | ----- |
+| Bootcamp | https://mybinder.org/v2/gh/zmoon/meteo473_fa20/binder?urlpath=lab/tree/nbs/bootcamp.ipynb |
+| Milestone 1 | |
+| Milestone 2 | |
+| Milestone 3 | |
+| Milestone 4 | |
+| Milestone 5 | |
+
+
+## Working with the repo locally
 
 Current steps for setting up after a fresh clone of the repo.
 
@@ -9,12 +21,9 @@ Current steps for setting up after a fresh clone of the repo.
    ```
    conda env create -f environment.yml
    ```
-2. Place the original data files (`*.npy`) in [`data/orig`](./data/orig).
-   Alternatively, place `data.zip` containing the `*.npy` files in `data/orig` and they will be loaded from there.
 
-   :eyes: Update: `data.zip` is now included in the repo via Git LFS.
-
-3. Run `write_nc()` from `data/create_nc.py` to create the netCDF file.
+2. Run `write_nc()` from `data/create_nc.py` to create the netCDF file
+   from `data.zip`, which is included in the repo via Git LFS.
 
    For example:
    ```
@@ -22,7 +31,7 @@ Current steps for setting up after a fresh clone of the repo.
    python -c 'import data; data.write_nc()'
    ```
 
-4. Install the pre-commit Git hooks with `pre-commit install --install-hooks`
+3. Install the pre-commit Git hooks with `pre-commit install --install-hooks`
 
 ### JupyterLab extensions
 
