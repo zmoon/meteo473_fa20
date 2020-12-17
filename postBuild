@@ -1,0 +1,6 @@
+# Build the netCDF file from the zipped .npy files
+python -c 'import data; data.write_nc()'
+
+# JupyterLab extensions
+jupyter labextension install @jupyterlab/toc @jupyter-widgets/jupyterlab-manager
+jupyter lab build
