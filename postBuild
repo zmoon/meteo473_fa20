@@ -2,10 +2,11 @@
 python -c 'import data; data.write_nc()'
 
 # Convert nb py:percent -> ipynb so Binder JupyterLab links work properly
+cd nbs
 for f in bootcamp.py ms?.py grids.py regrid.py; do
-  jupytext --to ipynb $f
-  rm $f
+  jupytext --to ipynb $f && rm $f
 done
+cd ..
 
 # JupyterLab extensions
 jupyter labextension install @jupyterlab/toc @jupyter-widgets/jupyterlab-manager
