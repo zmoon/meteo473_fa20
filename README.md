@@ -1,21 +1,21 @@
-# meteo473_fa20
 My Meteo 473 (TA) solutions for Fall 2020
 
 ## Browse on Binder
 
 | nb | &nbsp; |
 | -- | ----- |
-| Bootcamp | https://mybinder.org/v2/gh/zmoon/meteo473_fa20/binder?urlpath=lab/tree/nbs/bootcamp.ipynb |
-| Milestone 1 | |
-| Milestone 2 | |
-| Milestone 3 | |
-| Milestone 4 | |
-| Milestone 5 | |
+| Bootcamp | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/meteo473_fa20/HEAD?urlpath=lab%2Ftree%2Fnbs%2Fbootcamp.ipynb) |
+| Milestone 1 | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/meteo473_fa20/HEAD?urlpath=lab%2Ftree%2Fnbs%2Fms1.ipynb) |
+| Milestone 2 | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/meteo473_fa20/HEAD?urlpath=lab%2Ftree%2Fnbs%2Fms2.ipynb) |
+| Milestone 3 | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/meteo473_fa20/HEAD?urlpath=lab%2Ftree%2Fnbs%2Fms3.ipynb) |
+| Milestone 4 | [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/zmoon/meteo473_fa20/HEAD?urlpath=lab%2Ftree%2Fnbs%2Fms4.ipynb) |
+
+Note: it can take several minutes to start if a built image is not found.
 
 
-## Working with the repo locally
+## Work with the repo locally
 
-Current steps for setting up after a fresh clone of the repo.
+Getting set up:
 
 1. Create Conda env:  
    ```
@@ -31,13 +31,15 @@ Current steps for setting up after a fresh clone of the repo.
    python -c 'import data; data.write_nc()'
    ```
 
-3. Install the pre-commit Git hooks with `pre-commit install --install-hooks`
+3. Install the pre-commit Git hooks with `pre-commit install --install-hooks` (optional)
 
-### JupyterLab extensions
+### JupyterLab
 
-```
-jupyter labextension install @jupyterlab/toc @jupyter-widgets/jupyterlab-manager
-jupyter lab build
-```
+* :eyes: To open a Jupytext py:percent `.py`, right-click → "Open With" → "Notebook".
 
-:point_up: `ipympl` won't work in JupyterLab [unless you install the widget manager](https://github.com/matplotlib/ipympl#install-the-jupyterlab-extension) (`jupyerlab-manager`).
+* Install extensions:
+  ```
+  jupyter labextension install @jupyterlab/toc @jupyter-widgets/jupyterlab-manager
+  jupyter lab build
+  ```
+  :point_up: `ipympl` won't work in JupyterLab [unless you install the widget manager](https://github.com/matplotlib/ipympl#install-the-jupyterlab-extension) (`jupyerlab-manager`):exclamation:.
