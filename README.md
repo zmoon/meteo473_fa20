@@ -37,7 +37,7 @@ Getting set up:
 
 * :eyes: To open a Jupytext py:percent `.py`, right-click → "Open With" → "Notebook".
 
-* Install extensions:
+* Install extensions (JupyterLab < 3):
   ```
   jupyter labextension install @jupyterlab/toc @jupyter-widgets/jupyterlab-manager
   jupyter lab build
